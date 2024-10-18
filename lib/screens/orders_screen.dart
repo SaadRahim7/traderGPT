@@ -25,19 +25,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
         .fetchStrategies(email!);
   }
 
-  Future<void> data() async {
-    String? email = await _secureStorage.read(key: 'email');
-    await Provider.of<OrderProvider>(context, listen: false)
-        .fetchOrders(email!, 'coinbase');
-  }
-
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _getEmailAndFetchStrategies();
-      // data();
     });
   }
 
@@ -83,8 +76,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
             DropdownButtonFormField<String>(
               value: selectedValue,
+              hint: const Text("Select Mode"),
               decoration: const InputDecoration(
-                  border: OutlineInputBorder(), hintText: "Select Mode"),
+                border: OutlineInputBorder(),
+              ),
               items: const [
                 DropdownMenuItem(value: 'live', child: Text('Live')),
                 DropdownMenuItem(value: 'paper', child: Text('Paper')),

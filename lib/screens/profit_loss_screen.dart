@@ -13,23 +13,22 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
   bool isLoading = true;
   List<FlSpot> profitLossData = [];
 
-  // Initial selected value
-  String _selectedOption = 'Live';
-
-  // List of options in the dropdown
-  final List<String> _options = ['Live', 'Paper', 'Coinbase'];
+  String? selectedValue;
 
   final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   Future<void> _getEmailAndFetchStrategies() async {
     String? email = await _secureStorage.read(key: 'email');
     await Provider.of<ProfitlossProvider>(context, listen: false)
-        .fetchStrategies(email!, _selectedOption);
+        .fetchProfitLoss(email!, "coinbase");
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _getEmailAndFetchStrategies();
+    });
   }
 
   @override
@@ -39,25 +38,28 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              hint: const Text('Select Mode'),
-              value: _selectedOption,
-              items: _options.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
+            DropdownButtonFormField(
+              value: selectedValue,
+              hint: const Text("Select Mode"),
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'live', child: Text('Live')),
+                DropdownMenuItem(value: 'paper', child: Text('Paper')),
+                DropdownMenuItem(value: 'coinbase', child: Text('Coinbase')),
+              ],
+              onChanged: (newValue) async {
                 setState(() {
-                  _selectedOption = newValue!;
+                  selectedValue = newValue;
                 });
+                // if (newValue != null) {
+                //   String? email = await _secureStorage.read(key: 'email');
+                //   await Provider.of<PositionProvider>(context, listen: false)
+                //       .fetchPositions(email!, newValue);
+                // }
               },
-              onTap: () {
-                _getEmailAndFetchStrategies();
-              },
-            )
+            ),
           ],
         ),
       ),

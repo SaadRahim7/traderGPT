@@ -29,8 +29,10 @@ class _PositionsScreenState extends State<PositionsScreen> {
           children: [
             DropdownButtonFormField<String>(
               value: selectedValue,
+              hint: const Text("Select Mode"),
               decoration: const InputDecoration(
-                  border: OutlineInputBorder(), hintText: "Select Mode"),
+                border: OutlineInputBorder(),
+              ),
               items: const [
                 DropdownMenuItem(value: 'live', child: Text('Live')),
                 DropdownMenuItem(value: 'paper', child: Text('Paper')),

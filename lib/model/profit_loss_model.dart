@@ -1,41 +1,56 @@
 class ProfitLoss {
-  final List<ProductWisePl> productWisePl;
-  final double totalPl;
-  final double totalRealizedPl;
-  final double totalUnrealizedPl;
-  final ProfitLossByStrategy profitLossByStrategy;
-  final List<Strategy> strategies;
+  List<ProductWisePl>? productWisePl; // For Coinbase
+  ProfitLossByStrategy? profitLossByStrategy; // For Paper/Live
+  List<Strategy>? strategies; // For Paper/Live strategies
+
+  double? totalPl;
+  double? totalRealizedPl;
+  double? totalUnrealizedPl;
 
   ProfitLoss({
-    required this.productWisePl,
-    required this.totalPl,
-    required this.totalRealizedPl,
-    required this.totalUnrealizedPl,
-    required this.profitLossByStrategy,
-    required this.strategies,
+    this.productWisePl,
+    this.profitLossByStrategy,
+    this.strategies,
+    this.totalPl,
+    this.totalRealizedPl,
+    this.totalUnrealizedPl,
   });
 
   factory ProfitLoss.fromJson(Map<String, dynamic> json) {
     return ProfitLoss(
-      productWisePl: (json['product_wise_pl'] as List)
-          .map((item) => ProductWisePl.fromJson(item))
-          .toList(),
-      totalPl: json['total_pl'],
-      totalRealizedPl: json['total_realized_pl'],
-      totalUnrealizedPl: json['total_unrealized_pl'],
-      profitLossByStrategy: ProfitLossByStrategy.fromJson(json['profit_loss_by_strategy']),
-      strategies: (json['strategies'] as List)
-          .map((item) => Strategy.fromJson(item))
-          .toList(),
+      productWisePl: json['product_wise_pl'] != null
+          ? List<ProductWisePl>.from(
+              json['product_wise_pl'].map((item) => ProductWisePl.fromJson(item)))
+          : null,
+      profitLossByStrategy: json['profit_loss_by_strategy'] != null
+          ? ProfitLossByStrategy.fromJson(json['profit_loss_by_strategy'])
+          : null,
+      strategies: json['strategies'] != null
+          ? List<Strategy>.from(json['strategies'].map((item) => Strategy.fromJson(item)))
+          : null,
+      totalPl: json['total_pl']?.toDouble(),
+      totalRealizedPl: json['total_realized_pl']?.toDouble(),
+      totalUnrealizedPl: json['total_unrealized_pl']?.toDouble(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product_wise_pl': productWisePl?.map((item) => item.toJson()).toList(),
+      'profit_loss_by_strategy': profitLossByStrategy?.toJson(),
+      'strategies': strategies?.map((item) => item.toJson()).toList(),
+      'total_pl': totalPl,
+      'total_realized_pl': totalRealizedPl,
+      'total_unrealized_pl': totalUnrealizedPl,
+    };
   }
 }
 
 class ProductWisePl {
-  final String productId;
-  final double realizedPl;
-  final double totalPl;
-  final double unrealizedPl;
+  String productId;
+  double realizedPl;
+  double totalPl;
+  double unrealizedPl;
 
   ProductWisePl({
     required this.productId,
@@ -47,34 +62,44 @@ class ProductWisePl {
   factory ProductWisePl.fromJson(Map<String, dynamic> json) {
     return ProductWisePl(
       productId: json['product_id'],
-      realizedPl: json['realized_pl'],
-      totalPl: json['total_pl'],
-      unrealizedPl: json['unrealized_pl'],
+      realizedPl: json['realized_pl'].toDouble(),
+      totalPl: json['total_pl'].toDouble(),
+      unrealizedPl: json['unrealized_pl'].toDouble(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product_id': productId,
+      'realized_pl': realizedPl,
+      'total_pl': totalPl,
+      'unrealized_pl': unrealizedPl,
+    };
   }
 }
 
 class ProfitLossByStrategy {
-  final Map<String, double> profitLossByStrategy;
-  final double all;
+  Map<String, double> profitLossMap;
 
   ProfitLossByStrategy({
-    required this.profitLossByStrategy,
-    required this.all,
+    required this.profitLossMap,
   });
 
   factory ProfitLossByStrategy.fromJson(Map<String, dynamic> json) {
     return ProfitLossByStrategy(
-      profitLossByStrategy: (json..remove('all')).map((key, value) => MapEntry(key, value.toDouble())),
-      all: json['all'],
+      profitLossMap: Map<String, double>.from(json),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return profitLossMap;
   }
 }
 
 class Strategy {
-  final String displayName;
-  final String id;
-  final String name;
+  String displayName;
+  String id;
+  String name;
 
   Strategy({
     required this.displayName,
@@ -88,5 +113,13 @@ class Strategy {
       id: json['id'],
       name: json['name'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'display_name': displayName,
+      'id': id,
+      'name': name,
+    };
   }
 }
