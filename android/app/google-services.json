@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "960616245650",
+    "project_id": "tradergpt-396cc",
+    "storage_bucket": "tradergpt-396cc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960616245650:android:7f36b8a0ca67844edb794b",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUTQ6yYmb3gyZV54BZdNWFM7yKJi877ig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960616245650:android:2ace81c5dc570a37db794b",
+        "android_client_info": {
+          "package_name": "t1.t2.t3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUTQ6yYmb3gyZV54BZdNWFM7yKJi877ig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
