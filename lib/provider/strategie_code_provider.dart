@@ -5,8 +5,7 @@ class StrategiesCodeProvider with ChangeNotifier {
   String? strategieCode;
   bool isLoading = false;
   String? errorMessage;
-
-
+  String? refector;
 
   Future<void> fetchStratrgieCode(String username, String strategieid) async {
     isLoading = true;
@@ -16,6 +15,9 @@ class StrategiesCodeProvider with ChangeNotifier {
     try {
       strategieCode =
           await ApiProvider().getstrategiecode(username, strategieid);
+      refector = strategieCode!.substring(1, strategieCode!.length - 1);
+
+      print("dataaaaaaaaaaaaaaaaaaaaaaaaaa $refector");
     } catch (error) {
       errorMessage = 'Failed to load data: $error';
     } finally {

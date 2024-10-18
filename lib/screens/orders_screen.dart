@@ -41,39 +41,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Consumer<StrategyProvider>(
-            //   builder: (context, strategyProvider, child) {
-            //     if (strategyProvider.loading) {
-            //       return const Center(child: CircularProgressIndicator());
-            //     }
-
-            //     if (strategyProvider.strategies.isEmpty) {
-            //       return const Text("No strategies available");
-            //     }
-
-            //     return DropdownButtonFormField<String>(
-            //       isExpanded: true,
-            //       hint: const Text('Select a strategy'),
-            //       value: selectedStrategy,
-            //       items: strategyProvider.strategies.map((strategy) {
-            //         return DropdownMenuItem<String>(
-            //           value: strategy.displayName,
-            //           child: Text(
-            //             strategy.displayName,
-            //             overflow: TextOverflow.ellipsis,
-            //           ),
-            //         );
-            //       }).toList(),
-            //       onChanged: (newValue) {
-            //         setState(() {
-            //           selectedStrategy = newValue;
-            //         });
-            //       },
-            //     );
-            //   },
-            // ),
-            // const SizedBox(height: 20),
-
             DropdownButtonFormField<String>(
               value: selectedValue,
               hint: const Text("Select Mode"),
@@ -96,7 +63,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 }
               },
             ),
-
             Expanded(
               child: Consumer<OrderProvider>(
                 builder: (context, orderProvider, child) {
@@ -176,22 +142,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 },
               ),
             ),
-            // if (selectedStrategy != null)
-            //   DropdownButtonFormField<String>(
-            //     hint: Text('Select Enviroment'),
-            //     value: _selectedOption,
-            //     items: _options.map((String option) {
-            //       return DropdownMenuItem<String>(
-            //         value: option,
-            //         child: Text(option),
-            //       );
-            //     }).toList(),
-            //     onChanged: (String? newValue) {
-            //       setState(() {
-            //         _selectedOption = newValue;
-            //       });
-            //     },
-            //   ),
           ],
         ),
       ),

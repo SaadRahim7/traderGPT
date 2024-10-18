@@ -92,7 +92,7 @@ class _StrategyCodeScreenState extends State<StrategyCodeScreen> {
                     }
 
                     return HighlightView(
-                      value.strategieCode!,
+                      value.refector!,
                       language: 'python',
                       theme: darculaTheme,
                       padding: EdgeInsets.all(12),
