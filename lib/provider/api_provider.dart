@@ -176,4 +176,34 @@ class ApiProvider with ChangeNotifier {
 
     return communitystrategiesResponse;
   }
+
+  Future<bool> deleteStrategy(String userId, String strategyId) async {
+    var body = jsonEncode({
+      "user_id": userId,
+      "strategy_id": strategyId,
+    });
+
+    Request req = Request('DELETE', Uri.parse('https://www.tradergpt.co/api/strategy'))
+      ..body = body
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the response
+    var jsonData = jsonDecode(responseString);
+
+    // Check if the deletion was successful
+    if (response.statusCode == 200 && jsonData['success'] == true) {
+      logger.i(jsonData['message']);
+      return true;
+    } else {
+      logger.e("Failed to delete strategy: ${jsonData['message']}");
+      return false;
+    }
+  }
 }

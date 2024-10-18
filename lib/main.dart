@@ -10,6 +10,7 @@ import 'package:flutter_application_1/provider/watchlist_provider.dart';
 import 'package:provider/provider.dart';
 
 // Import your screens and services
+import 'provider/account_provider.dart';
 import 'provider/coinbase_provider.dart';
 import 'provider/strategy_provider.dart';
 import 'screens/login_screen.dart';
@@ -74,6 +75,7 @@ class TraderGPTApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => PositionProvider()),
         ChangeNotifierProvider(create: (_) => CommunityStrategiesProvider()),
+        ChangeNotifierProvider(create: (_) => AccountProvider()),
       ],
       child: MaterialApp(
         title: 'TraderGPT',

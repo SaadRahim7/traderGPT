@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/account_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../provider/coinbase_provider.dart';
+import '../provider/strategy_provider.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -9,6 +11,8 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final coinbaseProvider = Provider.of<CoinbaseProvider>(context);
+    final strategyProvider = Provider.of<StrategyProvider>(context);
+    final accountProvider = Provider.of<AccountProvider>(context);
 
     return coinbaseProvider.isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -29,8 +33,7 @@ class AccountScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => Scaffold(
-                                  appBar: AppBar(
-                                      title: const Text("Coinbase")),
+                                  appBar: AppBar(title: const Text("Coinbase")),
                                   body: WebViewWidget(
                                     controller: WebViewController()
                                       ..setJavaScriptMode(
@@ -86,6 +89,42 @@ class AccountScreen extends StatelessWidget {
                     backgroundColor: Colors.red,
                   ),
                   child: const Text('Delete Account'),
+                ),
+                const SizedBox(height: 20),
+                const Align(
+                  alignment: Alignment.center,
+                  child: Text("STRATEGY"),
+                ),
+                const SizedBox(height: 20),
+                ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: strategyProvider.strategies.length,
+                  separatorBuilder: (context, index) {
+                    return const SizedBox(height: 8);
+                  },
+                  itemBuilder: (context, index) {
+                    final currentStrategy = strategyProvider.strategies[index];
+                    return Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            "${currentStrategy.name} (${currentStrategy.id})",
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: (){
+                            var isSuccess = accountProvider.deleteStrategy(context, currentStrategy.id);
+                            if(isSuccess == true){
+
+                              strategyProvider.fetchStrategies();
+                            }
+                          },
+                          child: Text("Delete"),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
