@@ -12,9 +12,6 @@ class AccountProvider extends ChangeNotifier {
   StrategyProvider strategyProvider = StrategyProvider();
 
   bool _loading = false;
-
-
-
   bool get loading => _loading;
 
   Future<void> deleteStrategy(BuildContext context, String strategyId) async {

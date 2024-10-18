@@ -417,7 +417,11 @@ print(signals)
                               chart();
                             }),
                         IconButton(
-                            icon: const Icon(Icons.delete), onPressed: () {}),
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              watchlistProvider.deleteWatchList(
+                                  context, watchlist.id);
+                            }),
                       ],
                     ),
                   ),

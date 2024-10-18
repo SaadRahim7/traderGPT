@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class StockProvider extends ChangeNotifier {
   Map<String, List<dynamic>> allStockData = {};
   Map<String, Color> stockColors = {};
   Map<String, List<dynamic>> allStockTimestamps = {};
+  var logger = Logger();
   final List<Color> _availableColors = [
     Colors.red,
     Colors.green,
@@ -60,6 +62,8 @@ class StockProvider extends ChangeNotifier {
       );
     }
   }
+
+
 
   // Remove stock data but keep S&P 500 (^GSPC)
   void removeStock(String symbol) {

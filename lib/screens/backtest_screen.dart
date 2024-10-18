@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../provider/stock_chart_provider.dart';
+import '../provider/strategy_provider.dart';
 import '../services/backtest_service.dart';
 
 class BacktestScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class _BacktestScreenState extends State<BacktestScreen> {
   List<FlSpot> strategyData = [];
   List<FlSpot> sp500Data = [];
   Map<String, String> metrics = {};
+  String? selectedStrategy;
 
   final TextEditingController stockController = TextEditingController();
   String? selectedStock;
@@ -52,6 +54,42 @@ class _BacktestScreenState extends State<BacktestScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  Consumer<StrategyProvider>(
+                    builder: (context, strategyProvider, child) {
+                      if (strategyProvider.loading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (strategyProvider.strategies.isEmpty) {
+                        return const Text("No strategies available");
+                      }
+
+                      return DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        hint: const Text('Select a strategy'),
+                        value: selectedStrategy,
+                        items: strategyProvider.strategies.map((strategy) {
+                          return DropdownMenuItem<String>(
+                            value: strategy.id,
+                            child: Text(
+                              strategy.displayName.toString(),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) async {
+                          setState(() {
+                            selectedStrategy = newValue;
+                          });
+                          // if (newValue != null) {
+                          //   await Provider.of<StrategiesCodeProvider>(context,
+                          //       listen: false)
+                          //       .fetchStratrgieCode(email!, selectedStrategy!);
+                          // }
+                        },
+                      );
+                    },
+                  ),
                   TextField(
                     controller: stockController,
                     decoration: InputDecoration(

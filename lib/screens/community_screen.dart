@@ -40,7 +40,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _scrollController.position.maxScrollExtent) {
       final provider =
           Provider.of<CommunityStrategiesProvider>(context, listen: false);
-      if (!provider.isLoading && provider.hasMore) {
+      if (!provider.loading && provider.hasMore) {
         _loadMore();
       }
     }
@@ -51,7 +51,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Scaffold(
       body: Consumer<CommunityStrategiesProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading && provider.strategies.isEmpty) {
+          if (provider.loading && provider.strategies.isEmpty) {
             return Center(child: CircularProgressIndicator());
           } else if (provider.errorMessage.isNotEmpty) {
             return Center(child: Text('Error: ${provider.errorMessage}'));
@@ -89,7 +89,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         SizedBox(
                           width: MediaQuery.of(context).size.width,
                           child: ElevatedButton(
-                            onPressed: () async {},
+                            onPressed: () async {
+                              provider.addStrategyToWatchlist(context, strategy.strategyId);
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                             ),
