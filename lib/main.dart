@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application_1/provider/backtest_provider.dart';
 import 'package:flutter_application_1/provider/community_strategies_provider.dart';
+import 'package:flutter_application_1/provider/logs_provider.dart';
 import 'package:flutter_application_1/provider/order_provider.dart';
 import 'package:flutter_application_1/provider/position_provider.dart';
 import 'package:flutter_application_1/provider/profitloss_provider.dart';
@@ -78,6 +80,8 @@ class TraderGPTApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CommunityStrategiesProvider()),
         ChangeNotifierProvider(create: (_) => StrategiesCodeProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
+        ChangeNotifierProvider(create: (_) => BacktestProvider()),
+        ChangeNotifierProvider(create: (_) => LogProvider()),
       ],
       child: MaterialApp(
         title: 'TraderGPT',

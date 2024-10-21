@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/community_strategie_model.dart';
+import 'package:flutter_application_1/model/logs_model.dart';
+import 'package:flutter_application_1/model/metric_model.dart';
 import 'package:flutter_application_1/model/order_model.dart';
 import 'package:flutter_application_1/model/position_model.dart';
 import 'package:flutter_application_1/model/profit_loss_model.dart';
@@ -8,6 +10,8 @@ import 'package:flutter_application_1/model/strategy_model.dart' as strat;
 import 'package:flutter_application_1/model/watchlist_model.dart';
 import 'package:http/http.dart';
 import 'package:logger/logger.dart';
+
+import '../model/backtest_strategy_chart_model.dart';
 
 class ApiProvider with ChangeNotifier {
   var logger = Logger();
@@ -68,34 +72,6 @@ class ApiProvider with ChangeNotifier {
     return watchlist;
   }
 
-  // Future<List<ProfitLoss>> profitloss(String username, String mode) async {
-  //   var queryParameters = {
-  //     'user_id': username,
-  //     'selected_environment': mode,
-  //   };
-
-  //   Request req = Request(
-  //       'GET', Uri.parse('https://www.tradergpt.co/api/profit_and_loss'))
-  //     ..body = json.encode(queryParameters)
-  //     ..headers.addAll({
-  //       "Content-type": "application/json",
-  //     });
-  //   var response = await req.send();
-
-  //   // Convert the streamed response to string
-  //   var responseString = await response.stream.bytesToString();
-
-  //   // Parse the string as JSON (if the response is in JSON format)
-  //   final List<dynamic> jsonData = jsonDecode(responseString);
-  //   List<ProfitLoss> profitloss =
-  //       jsonData.map<ProfitLoss>((json) => ProfitLoss.fromJson(json)).toList();
-
-  //   // Do something with the jsonData
-  //   logger.i(jsonData);
-
-  //   return profitloss;
-  // }
-
   Future<List<Order>> getOrders(String username, String mode) async {
     var queryParameters = {
       'user_id': username,
@@ -149,33 +125,6 @@ class ApiProvider with ChangeNotifier {
     return positionResponse;
   }
 
-  Future<Map<String, dynamic>> getStrategyMetrics(String userId, String strategyId) async {
-    var body = jsonEncode({
-      "user_id": userId,
-      "strategy_id": strategyId,
-    });
-
-    Request req = Request('GET', Uri.parse('https://www.tradergpt.co/api/strategy/metrics'))
-      ..body = body
-      ..headers.addAll({
-        "Content-type": "application/json",
-      });
-
-    var response = await req.send();
-
-    // Convert the streamed response to string
-    var responseString = await response.stream.bytesToString();
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonData = jsonDecode(responseString);
-      logger.i(jsonData); // Log the successful response
-      return jsonData; // Return the parsed JSON data
-    } else {
-      logger.e("Failed to fetch strategy metrics: ${response.statusCode}");
-      return {}; // Return an empty map or handle errors as needed
-    }
-  }
-
   Future<CommunityStrategies> getCommunityStrategies(
       String username, String page) async {
     var queryParameters = {
@@ -210,11 +159,12 @@ class ApiProvider with ChangeNotifier {
       "strategy_id": strategyId,
     });
 
-    Request req = Request('DELETE', Uri.parse('https://www.tradergpt.co/api/strategy'))
-      ..body = body
-      ..headers.addAll({
-        "Content-type": "application/json",
-      });
+    Request req =
+        Request('DELETE', Uri.parse('https://www.tradergpt.co/api/strategy'))
+          ..body = body
+          ..headers.addAll({
+            "Content-type": "application/json",
+          });
 
     var response = await req.send();
 
@@ -234,14 +184,14 @@ class ApiProvider with ChangeNotifier {
     }
   }
 
-
   Future<bool> deleteWatchList(String userId, String strategyId) async {
     var body = jsonEncode({
       "user_id": userId,
       "strategy_id": strategyId,
     });
 
-    Request req = Request('DELETE', Uri.parse('https://www.tradergpt.co/api/watchlist/strategy'))
+    Request req = Request(
+        'DELETE', Uri.parse('https://www.tradergpt.co/api/watchlist/strategy'))
       ..body = body
       ..headers.addAll({
         "Content-type": "application/json",
@@ -282,9 +232,11 @@ class ApiProvider with ChangeNotifier {
     // Convert the streamed response to string
     var responseString = await response.stream.bytesToString();
 
+    var jsonData = jsonDecode(responseString);
+
     logger.i(responseString);
 
-    return responseString;
+    return jsonData;
   }
 
   Future<ProfitLoss> getProfitLoss(String username, String mode) async {
@@ -319,7 +271,8 @@ class ApiProvider with ChangeNotifier {
       "strategy_id": strategyId,
     });
 
-    Request req = Request('POST', Uri.parse('https://www.tradergpt.co/api/watchlist/strategy'))
+    Request req = Request(
+        'POST', Uri.parse('https://www.tradergpt.co/api/watchlist/strategy'))
       ..body = body
       ..headers.addAll({
         "Content-type": "application/json",
@@ -341,5 +294,129 @@ class ApiProvider with ChangeNotifier {
       logger.e("Failed to add strategy to watchlist: ${jsonData['message']}");
       return false;
     }
+  }
+
+  Future<StrategyMetric> getStrategyMetrics(
+      String username, String strategy) async {
+    var queryParameters = {
+      'user_id': username,
+      'strategy_id': strategy,
+    };
+
+    Request req = Request(
+        'GET', Uri.parse('https://www.tradergpt.co/api/strategy/metrics'))
+      ..body = json.encode(queryParameters)
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the JSON response
+    final Map<String, dynamic> jsonData = jsonDecode(responseString);
+
+    StrategyMetric data = StrategyMetric.fromJson(jsonData);
+
+    logger.i(jsonData);
+
+    return data;
+  }
+
+  Future<StrategyBacktestChart> getStrategyBacktestChart(
+      String username, String strategy) async {
+    var queryParameters = {
+      'user_id': username,
+      'strategy_id': strategy,
+    };
+
+    Request req = Request(
+        'GET', Uri.parse('https://www.tradergpt.co/api/strategy/backtest'))
+      ..body = json.encode(queryParameters)
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the JSON response
+    final Map<String, dynamic> jsonData = jsonDecode(responseString);
+
+    // Create a ChartData instance from the parsed JSON
+    StrategyBacktestChart data = StrategyBacktestChart.fromJson(jsonData);
+
+    // Log the response for debugging
+    logger.i(jsonData);
+
+    return data;
+  }
+
+  Future<StrategyBacktestChartYahoo> getYahooCharts(
+      String userId, String symbol, List dates) async {
+    var queryParameters = {
+      'user_id': userId,
+      'symbol': symbol,
+      'dates': dates,
+    };
+
+    Request req =
+        Request('GET', Uri.parse('https://www.tradergpt.co/api/ticker/data'))
+          ..body = json.encode(queryParameters)
+          ..headers.addAll({
+            "Content-type": "application/json",
+          });
+
+    var response = await req.send();
+
+    // Convert the streamed response to a string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the JSON response
+    final Map<String, dynamic> jsonData = jsonDecode(responseString);
+
+    // Create a CumulativeReturnsResponse instance from the parsed JSON
+    StrategyBacktestChartYahoo data =
+        StrategyBacktestChartYahoo.fromJson(jsonData);
+
+    // Log the response for debugging
+    logger.i(jsonData);
+
+    return data;
+  }
+
+  Future<List<LogEntry>> getLogs(String username, String strategy) async {
+    var queryParameters = {
+      'user_id': username,
+      'strategy_id': strategy,
+    };
+
+    Request req = Request(
+        'GET', Uri.parse('https://www.tradergpt.co/api/cloudwatch_logs'))
+      ..body = json.encode(queryParameters)
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the JSON response
+    final List<dynamic> jsonData = jsonDecode(responseString);
+
+    // Create a ChartData instance from the parsed JSON
+    List<LogEntry> logs =
+        jsonData.map<LogEntry>((log) => LogEntry.fromJson(log)).toList();
+
+    // Log the response for debugging
+    logger.i(jsonData);
+
+    return logs;
   }
 }

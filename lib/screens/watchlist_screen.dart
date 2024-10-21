@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/watchlist_provider.dart';
@@ -5,8 +8,11 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/darcula.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:http/http.dart' as http; // Imported for HTTP requests
 
 import '../api_handler/apis/demoapi.dart';
+import '../provider/coinbase_provider.dart';
 import '../provider/stock_chart_provider.dart';
 
 class WatchlistScreen extends StatefulWidget {
@@ -18,6 +24,16 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   bool isLoading = true;
   List<Map<String, dynamic>> watchlist = [];
+  late CoinbaseProvider coinbaseProvider;
+
+  String errorMessage = '';
+  String alpacaAccessToken = '';
+  double alpacaBuyingPower = 0.0;
+  String clientId = '6c237ee966f7c0ace2c5cf65293b4d61';
+  String clientSecret = '25e5e97c680d303fcec2fb9cea33a03a713df133';
+  bool isPaperAccount = false;
+
+  String redirectUri = 'http://www.tradergpt.co/oauth/callback';
 
   List<String> _users = [];
   List<String> _options = ["Live", "Paper", "Coinbase"];
@@ -347,7 +363,9 @@ print(signals)
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        _showDeployModal();
+                      },
                       child: const Text("Invest in this Strategy"))
                 ],
               ),
@@ -382,6 +400,457 @@ print(signals)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _getEmailAndFetchWatchlist();
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      coinbaseProvider = Provider.of<CoinbaseProvider>(context, listen: false);
+      // Now you can use the provider here
+      // Call your data loading or other initialization logic here
+    });
+  }
+
+  // {{ edit_6 }} Added method to initiate Alpaca OAuth
+  void _initiateAlpacaOAuth(bool isPaper) async {
+    final state = _generateRandomState();
+    final authUrl =
+        'https://app.alpaca.markets/oauth/authorize?response_type=code&client_id=$clientId&redirect_uri=${Uri.encodeComponent(redirectUri)}&state=$state&scope=account:write%20trading';
+
+    // Initialize WebViewController
+    final WebViewController webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith(redirectUri)) {
+              final uri = Uri.parse(request.url);
+              final code = uri.queryParameters['code'];
+              final returnedState = uri.queryParameters['state'];
+
+              if (returnedState == state && code != null) {
+                _exchangeCodeForToken(code, isPaper);
+              }
+
+              Navigator.of(context).pop(); // Close WebView
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(authUrl));
+
+    // Open WebView for OAuth
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: const Text('Connect to Alpaca')),
+        body: WebViewWidget(
+            controller:
+                webViewController), // {{ edit_new }} Use WebViewWidget with the initialized controller
+      ),
+    ));
+  }
+
+// {{ edit_7 }} Added method to exchange authorization code for access token
+  Future<void> _exchangeCodeForToken(String code, bool isPaper) async {
+    final tokenUrl =
+        'https://api.alpaca.markets/oauth/token'; // {{ edit_new }} Ensure this points to your backend's token exchange endpoint
+
+    try {
+      final response = await http.post(
+        Uri.parse(tokenUrl),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'grant_type': 'authorization_code',
+          'code': code,
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'redirect_uri': redirectUri,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          alpacaAccessToken = data['access_token'];
+          isPaperAccount = isPaper; // {{ edit_30 }} Set the account type
+        });
+        _fetchAlpacaBuyingPower();
+      } else {
+        // Handle error response
+        print('Error exchanging code: ${response.body}');
+        setState(() {
+          errorMessage = 'Failed to connect to Alpaca. Please try again.';
+        });
+      }
+    } catch (e) {
+      print('Exception during token exchange: $e');
+      setState(() {
+        errorMessage = 'An error occurred while connecting to Alpaca.';
+      });
+    }
+  }
+
+  Future<void> _fetchAlpacaBuyingPower() async {
+    final accountUrl = isPaperAccount
+        ? 'https://paper-api.alpaca.markets/v2/account'
+        : 'https://api.alpaca.markets/v2/account';
+
+    try {
+      final response = await http.get(
+        Uri.parse(accountUrl),
+        headers: {
+          'Authorization': 'Bearer $alpacaAccessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          alpacaBuyingPower = double.parse(data['buying_power']);
+        });
+      } else {
+        // Handle error response
+        print('Error fetching buying power: ${response.body}');
+        setState(() {
+          errorMessage =
+              'Failed to load buying power. Please check your account status.';
+        });
+      }
+    } catch (e) {
+      print('Exception during fetching buying power: $e');
+      setState(() {
+        errorMessage = 'An error occurred while fetching buying power.';
+      });
+    }
+  }
+
+  String _generateRandomState() {
+    final rand = Random.secure();
+    final values = List<int>.generate(16, (i) => rand.nextInt(256));
+    return base64Url.encode(values);
+  }
+
+  Future<void> _showDeployModal() async {
+    // {{ edit_move_connectBrokerage_outside }}
+    // Initialize connectBrokerage outside the StatefulBuilder to preserve its state
+    String connectBrokerage = '';
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        // Move these variables outside of StatefulBuilder to persist between state updates
+        final _formKey = GlobalKey<FormState>();
+        final TextEditingController strategyNameController =
+            TextEditingController();
+        final TextEditingController fundingAmountController =
+            TextEditingController();
+
+        String frequency = 'Hourly';
+        String deploymentEnvironment = 'Alpaca Paper'; // Initialize here
+        bool shareWithCommunity = true;
+        bool selfImprove = true;
+        bool isDeploying = false;
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              backgroundColor: Colors.grey[800],
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: const Icon(Icons.close, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Deploy Trading Bot',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Buying Power Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(15.0),
+                        decoration: BoxDecoration(
+                          color: Colors.green[700],
+                          borderRadius: BorderRadius.circular(5.0),
+                        ),
+                        child: Text(
+                          alpacaAccessToken.isNotEmpty
+                              ? 'Buying Power: \$${alpacaBuyingPower.toStringAsFixed(2)}'
+                              : coinbaseProvider.accessToken.isNotEmpty
+                                  ? 'Buying Power: \$${coinbaseProvider.coinbaseBalance}'
+                                  : 'Buying Power: \$0',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18.0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Form Section
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: strategyNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Strategy Name',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a strategy name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                            // Frequency Dropdown
+                            DropdownButtonFormField<String>(
+                              value: frequency,
+                              decoration: const InputDecoration(
+                                labelText: 'Frequency',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                'Hourly',
+                                'Daily',
+                                'Weekly',
+                                'Monthly',
+                                'Quarterly',
+                                'Yearly'
+                              ]
+                                  .map((freq) => DropdownMenuItem(
+                                        value: freq,
+                                        child: Text(freq),
+                                      ))
+                                  .toList(),
+                              onChanged: (val) {
+                                setStateDialog(() {
+                                  frequency = val!;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                            // Funding Amount Field
+                            TextFormField(
+                              controller: fundingAmountController,
+                              decoration: const InputDecoration(
+                                labelText: 'Funding Amount (\$)',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a funding amount';
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return 'Please enter a valid number';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                            // Deployment Environment Dropdown
+                            DropdownButtonFormField<String>(
+                              value: deploymentEnvironment,
+                              decoration: const InputDecoration(
+                                labelText: 'Deployment Environment',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                'Alpaca Paper', // Show Alpaca Paper only if Alpaca Live is not connected
+                                'Alpaca Live', // Show Alpaca Live if connected
+                                'Coinbase', // Show Coinbase
+                              ]
+                                  .map((env) => DropdownMenuItem(
+                                        value: env,
+                                        child: Text(env),
+                                      ))
+                                  .toList(),
+                              onChanged: (val) {
+                                setStateDialog(() {
+                                  deploymentEnvironment = val!;
+
+                                  if (deploymentEnvironment == 'Alpaca Live') {
+                                    _initiateAlpacaOAuth(false);
+                                  } else if (deploymentEnvironment ==
+                                      'Alpaca Paper') {
+                                    _initiateAlpacaOAuth(true);
+                                  } else if (deploymentEnvironment ==
+                                      'Coinbase') {
+                                    if (coinbaseProvider.coinbaseStatus ==
+                                        'Connected') {
+                                      () async {
+                                        await coinbaseProvider
+                                            .getCoinbaseWalletBalance();
+                                        setStateDialog(() {});
+                                      }();
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Scaffold(
+                                            appBar: AppBar(
+                                                title: const Text("Coinbase")),
+                                            body: WebViewWidget(
+                                              controller: WebViewController()
+                                                ..setJavaScriptMode(
+                                                    JavaScriptMode.unrestricted)
+                                                ..setNavigationDelegate(
+                                                  NavigationDelegate(
+                                                    onNavigationRequest:
+                                                        (request) async {
+                                                      if (request.url.contains(
+                                                          coinbaseProvider
+                                                              .redirectUri)) {
+                                                        final Uri uri =
+                                                            Uri.parse(
+                                                                request.url);
+                                                        final String? code =
+                                                            uri.queryParameters[
+                                                                'code'];
+                                                        if (code != null) {
+                                                          await coinbaseProvider
+                                                              .fetchAccessToken(
+                                                                  code);
+                                                          await coinbaseProvider
+                                                              .getCoinbaseWalletBalance();
+                                                          setStateDialog(() {});
+                                                          Navigator.pop(
+                                                              context);
+                                                        }
+                                                        return NavigationDecision
+                                                            .prevent;
+                                                      }
+                                                      return NavigationDecision
+                                                          .navigate;
+                                                    },
+                                                  ),
+                                                )
+                                                ..loadRequest(Uri.parse(
+                                                    coinbaseProvider
+                                                        .buildOAuthUrl)),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please select a deployment option';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                            // Share with Community
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: shareWithCommunity,
+                                  onChanged: (val) {
+                                    setStateDialog(() {
+                                      shareWithCommunity = val!;
+                                    });
+                                  },
+                                ),
+                                const Text('Share with Community'),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Self-Improve Checkbox
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: selfImprove,
+                                  onChanged: (val) {
+                                    setStateDialog(() {
+                                      selfImprove = val!;
+                                    });
+                                  },
+                                ),
+                                const Text('Self-Improve'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Deploy Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[300],
+                              foregroundColor: Colors.black,
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: isDeploying
+                                ? null
+                                : () {
+                                    if (_formKey.currentState!.validate()) {
+                                      setStateDialog(() {
+                                        isDeploying = true;
+                                      });
+
+                                      Future.delayed(const Duration(seconds: 2),
+                                          () {
+                                        setStateDialog(() {
+                                          isDeploying = false;
+                                        });
+                                        Navigator.of(context).pop();
+                                      });
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[700],
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Deploy'),
+                          ),
+                        ],
+                      ),
+                      if (isDeploying)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 20),
+                          child: CircularProgressIndicator(),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -417,11 +886,7 @@ print(signals)
                               chart();
                             }),
                         IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              watchlistProvider.deleteWatchList(
-                                  context, watchlist.id);
-                            }),
+                            icon: const Icon(Icons.delete), onPressed: () {}),
                       ],
                     ),
                   ),
@@ -431,50 +896,6 @@ print(signals)
           );
         },
       ),
-
-      //   body: isLoading
-      //       ? const Center(child: CircularProgressIndicator())
-      //       : Padding(
-      //           padding: const EdgeInsets.all(16),
-      //           child: Column(
-      //             children: [
-
-      //               isLoading
-      //                   ? const Center(
-      //                       child: CircularProgressIndicator(),
-      //                     )
-      //                   : ListView.builder(
-      //                       shrinkWrap: true,
-      //                       itemCount: watchlist.length,
-      //                       itemBuilder: (context, index) {
-      //                         final item = watchlist[index];
-      //                         return ListTile(
-      //                           contentPadding: const EdgeInsets.all(0),
-      //                           title: Text(item['name']),
-      //                           subtitle: Text('Creator: ${item['creator']}'),
-      //                           trailing: SizedBox(
-      //                             width: 100,
-      //                             child: Row(
-      //                               children: [
-      //                                 IconButton(
-      //                                     icon: const Icon(Icons.visibility),
-      //                                     onPressed: () {
-      //                                       chart();
-      //                                     }),
-      //                                 IconButton(
-      //                                   icon: const Icon(Icons.delete),
-      //                                   onPressed: () =>
-      //                                       _removeFromWatchlist(index),
-      //                                 ),
-      //                               ],
-      //                             ),
-      //                           ),
-      //                         );
-      //                       },
-      //                     )
-      //             ],
-      //           ),
-      //         ),
     );
   }
 }

@@ -6,9 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
 class CoinbaseProvider with ChangeNotifier {
-  final String clientId = '08559d20-bbb7-4a28-9bfa-35486655c258';
-  final String clientSecret = 'WOlvQA0uI.gYkLfoVca__5tvAQ';
-  final String redirectUri = 'https://www.google.com';
+  final String clientId = 'd68e4f5f-379e-4748-a975-f1f1d219c902';
+  final String clientSecret = 'OvJlcVEwBMX-trY8qLg-soLP81';
+  final String redirectUri = 'https://www.tradergpt.co/coinbaseredirect';
   final String scopes = 'wallet:accounts:read';
   String accessToken = '';
   String refreshToken = '';

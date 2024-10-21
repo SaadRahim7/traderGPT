@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/api_provider.dart';
 import 'dart:math';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -8,6 +9,9 @@ class StockProvider extends ChangeNotifier {
   Map<String, List<dynamic>> allStockData = {};
   Map<String, Color> stockColors = {};
   Map<String, List<dynamic>> allStockTimestamps = {};
+
+  List<double?> strategyReturns = [];
+  List<String>? strategyDates = [];
   var logger = Logger();
   final List<Color> _availableColors = [
     Colors.red,
@@ -63,7 +67,28 @@ class StockProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchStrategyChartData(String username, String strategy) async {
+    try {
+      final strategyChart =
+          await ApiProvider().getStrategyBacktestChart(username, strategy);
 
+      if (strategyChart != null) {
+        strategyReturns = strategyChart.strategyReturns ?? [];
+        strategyDates = strategyChart.dates ?? [];
+
+        // Assign a color to the strategy returns line
+        if (!stockColors.containsKey('strategy_returns')) {
+          Color strategyColor =
+              _availableColors[_random.nextInt(_availableColors.length)];
+          stockColors['strategy_returns'] = strategyColor;
+        }
+
+        notifyListeners();
+      }
+    } catch (e) {
+      logger.e("Failed to fetch strategy data: $e");
+    }
+  }
 
   // Remove stock data but keep S&P 500 (^GSPC)
   void removeStock(String symbol) {
