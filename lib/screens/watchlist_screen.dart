@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/api_provider.dart';
 import 'package:flutter_application_1/provider/watchlist_provider.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/darcula.dart';
@@ -25,7 +26,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   bool isLoading = true;
   List<Map<String, dynamic>> watchlist = [];
   late CoinbaseProvider coinbaseProvider;
-
+  late WatchlistProvider watchlistProvider;
+  String originalStrategyId = '';
+  String originalCreatorId = '';
   String errorMessage = '';
   String alpacaAccessToken = '';
   double alpacaBuyingPower = 0.0;
@@ -402,8 +405,9 @@ print(signals)
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       coinbaseProvider = Provider.of<CoinbaseProvider>(context, listen: false);
-      // Now you can use the provider here
-      // Call your data loading or other initialization logic here
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      watchlistProvider = Provider.of<WatchlistProvider>(context, listen: false);
     });
   }
 
@@ -463,6 +467,7 @@ print(signals)
           'grant_type': 'authorization_code',
           'code': code,
           'client_id': clientId,
+          'client_secret': clientSecret,
           'client_secret': clientSecret,
           'redirect_uri': redirectUri,
         },
@@ -551,6 +556,7 @@ print(signals)
         bool selfImprove = true;
         bool isDeploying = false;
 
+
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return Dialog(
@@ -635,7 +641,7 @@ print(signals)
                                 'Weekly',
                                 'Monthly',
                                 'Quarterly',
-                                'Yearly'
+                                'yearly'
                               ]
                                   .map((freq) => DropdownMenuItem(
                                         value: freq,
@@ -814,19 +820,42 @@ print(signals)
                           ElevatedButton(
                             onPressed: isDeploying
                                 ? null
-                                : () {
+                                : ()async{
                                     if (_formKey.currentState!.validate()) {
-                                      setStateDialog(() {
+                                     /* setStateDialog(() {
                                         isDeploying = true;
-                                      });
+                                      });*/
+                                      String? userId = await _secureStorage.read(key: 'email');
 
-                                      Future.delayed(const Duration(seconds: 2),
+                                      print('userId $userId');
+                                      print('originalCreatorId $originalCreatorId');
+                                      print('originalStrategyId $originalStrategyId');
+                                      int selfImproveInt = selfImprove ? 1 : 0;
+                                      int shareWithCommunityInt = shareWithCommunity ? 1 : 0;
+
+                                      print('selfImprove as int: $selfImproveInt');
+                                      print('shareWithCommunity as int: $shareWithCommunityInt');
+                                      print('deploymentEnvironment: $deploymentEnvironment');
+                                      print('frequency: $frequency');
+                                      print('strategyNameController: ${strategyNameController.text}');
+                                      print('fundingAmountController: ${fundingAmountController.text}');
+                                      String fundingAmountText = fundingAmountController.text;
+
+                                      int? fundingAmount = int.tryParse(fundingAmountText);
+                                      if (fundingAmount != null) {
+                                        print('Funding Amount as int: $fundingAmount');
+                                      } else {
+                                        print('Error: Invalid number format');
+                                      }
+
+                                      ApiProvider().deployWatchlist(context: context, userId: userId!, selectedEnvironment: deploymentEnvironment, strategyName: strategyNameController.text, frequency: frequency, fundingAmount: fundingAmount!, shareWithCommunity: shareWithCommunityInt, selfImprove: selfImproveInt, originalCreatorId: originalCreatorId, originalStrategyId: originalStrategyId);
+                                      /*Future.delayed(const Duration(seconds: 2),
                                           () {
                                         setStateDialog(() {
-                                          isDeploying = false;
+                                          //isDeploying = false;
                                         });
                                         Navigator.of(context).pop();
-                                      });
+                                      });*/
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
@@ -883,6 +912,10 @@ print(signals)
                         IconButton(
                             icon: const Icon(Icons.visibility),
                             onPressed: () {
+                              originalStrategyId = watchlist.id;
+                              originalCreatorId = watchlist.originalCreator;
+                              print('originalStrategyId abc $originalStrategyId');
+                              print('originalCreatorId abc $originalCreatorId');
                               chart();
                             }),
                         IconButton(

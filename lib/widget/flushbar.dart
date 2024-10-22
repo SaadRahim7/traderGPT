@@ -20,7 +20,7 @@ class FlushBar {
           message: message,
           positionOffset: 8,
           borderRadius: BorderRadius.circular(8),
-          // backgroundColor: Colors.red,
+           backgroundColor: Colors.red,
           titleColor: Colors.white,
           duration: Duration(seconds: 2),
           icon: Icon(Icons.error, color: Colors.white),

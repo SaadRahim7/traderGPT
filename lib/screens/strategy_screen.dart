@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/api_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,16 +14,19 @@ import 'dart:math'; // {{ edit_23 }} Imported math library for rotation
 import 'package:flutter/services.dart'; // {{ edit_25 }} Imported for input formatting
 import 'package:webview_flutter/webview_flutter.dart'; // {{ edit_new }} Import updated webview_flutter package
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // {{ edit_6 }} Added flutter_secure_storage for secure token storage
-import 'dart:io'; // {{ edit_new }} Import dart:io for platform checks
+import 'dart:io';
+
+import '../widget/flushbar.dart'; // {{ edit_new }} Import dart:io for platform checks
 
 class StrategyScreen extends StatefulWidget {
   @override
   _StrategyScreenState createState() => _StrategyScreenState();
 }
+Conversation? currentConversation;
 
 class _StrategyScreenState extends State<StrategyScreen> {
   List<Conversation> conversations = [];
-  Conversation? currentConversation;
+  //Conversation? currentConversation;
   TextEditingController messageController = TextEditingController();
   ScrollController scrollController = ScrollController();
   bool isLoading = false;
@@ -41,6 +45,9 @@ class _StrategyScreenState extends State<StrategyScreen> {
   String? selectedStock;
   double? selectedPrice;
   int? selectedYear;
+  String? currentConversationId;
+  String? selectedMessageId;
+
 
   final List<Map<String, dynamic>> _tableData = [
     {
@@ -90,7 +97,7 @@ class _StrategyScreenState extends State<StrategyScreen> {
     }
   }
 
-  void _fetchConversations() async {
+ /* void _fetchConversations() async {
     if (!isAuthenticated) return;
 
     setState(() {
@@ -153,7 +160,95 @@ class _StrategyScreenState extends State<StrategyScreen> {
         isLoading = false;
       });
     }
+  }*/
+
+
+  void _fetchConversations() async {
+    if (!isAuthenticated) return;
+
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser!;
+      final conversationsSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('conversations')
+          .orderBy('created_at', descending: true)
+          .get();
+
+      setState(() {
+        conversations = conversationsSnapshot.docs
+            .map((doc) {
+          final data = doc.data();
+          final messagesSnapshot = (data['messages'] as List<dynamic>? ?? []);
+
+          final messages = messagesSnapshot
+              .map((message) {
+            // Check if the 'id' field exists
+            final messageId = message.containsKey('id') ? message['id'] as String? : null;
+            final content = message['content'] as String? ?? '';
+
+            if (selectedMessageId == null && messageId != null) {
+              selectedMessageId = messageId;
+            }
+
+            // Print verification results for each message
+            if (messageId != null) {
+              print('Message ID found: $messageId, Content: $content');
+            } else {
+              print('Message has no valid ID: $content');
+            }
+
+            return ChatMessage(
+              id: messageId ?? '',
+              text: content,
+              isUser: message['role'] == 'user',
+            );
+          }).toList();
+
+          // Skip conversations with no messages
+          if (messages.isEmpty) {
+            return null;
+          }
+
+          String title = data['summary'] as String? ??
+              (messages.isNotEmpty
+                  ? messages.first.text
+                  : 'New Conversation');
+
+          return Conversation(
+            id: doc.id,
+            title: title,
+            messages: messages,
+          );
+        })
+            .whereType<Conversation>()
+            .toList(); // Filter out null values
+
+        if (conversations.isNotEmpty) {
+          currentConversation = conversations.first;
+        } else {
+          currentConversation = null;
+        }
+
+        print('Selected Message ID: $selectedMessageId'); // Use this ID as needed
+      });
+    } catch (e) {
+      print('Error fetching conversations: $e');
+      setState(() {
+        errorMessage = 'Failed to load conversations. Please try again later.';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
+
 
   void _createNewConversation() async {
     if (!isAuthenticated) return;
@@ -706,7 +801,7 @@ class _StrategyScreenState extends State<StrategyScreen> {
     }
   }
 
-  Future<void> chart() async {
+  Future<void> chart(String messageId) async {
     Size size = MediaQuery.of(context).size;
     showDialog(
       context: context,
@@ -970,7 +1065,7 @@ class _StrategyScreenState extends State<StrategyScreen> {
       ),
       drawer: isAuthenticated
           ? Drawer(
-              child: ListView(
+            /*  child: ListView(
                 children: [
                   DrawerHeader(
                     child: const Text('Conversations'),
@@ -984,6 +1079,8 @@ class _StrategyScreenState extends State<StrategyScreen> {
                             onTap: () {
                               setState(() {
                                 currentConversation = conv;
+                                currentConversationId = currentConversation!.id;
+                                print('currentConversationId $currentConversationId');
                               });
                               Navigator.pop(context);
                             },
@@ -994,8 +1091,54 @@ class _StrategyScreenState extends State<StrategyScreen> {
                           ))
                       .toList(),
                 ],
+              ),*/
+        child: ListView(
+          children: [
+            DrawerHeader(
+              child: const Text('Conversations'),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
               ),
-            )
+            ), ...conversations
+        .map((conv) => ListTile(
+      title: Text(conv.title),
+              onTap: () {
+                setState(() {
+                  currentConversation = conv;
+                  currentConversationId = currentConversation!.id;
+
+                  // Filter out messages that have no valid id
+                  final validMessages = conv.messages.where((message) => message.id!.isNotEmpty).toList();
+
+                  // Check if there are valid messages
+                  if (validMessages.isNotEmpty) {
+                    for (var message in validMessages) {
+                      print('Message ID: ${message.id}'); // Print each valid message ID
+                    }
+                    selectedMessageId = validMessages.first.id; // Set to the first valid message ID
+                  } else {
+                    selectedMessageId = null; // No valid message IDs found
+                  }
+
+                  print('currentConversationId: $currentConversationId');
+                  print('First Selected Message ID: $selectedMessageId'); // Print the first valid message ID
+                });
+
+                Navigator.pop(context); // Close drawer or navigate back
+              },
+
+
+              trailing: IconButton(
+        icon: const Icon(Icons.delete, color: Colors.red),
+        onPressed: () => _deleteConversation(conv),
+      ),
+    ))
+        .toList(),
+
+    ],
+        ),
+
+      )
           : null,
       body: !isAuthenticated
           ? Center(
@@ -1568,17 +1711,25 @@ class Conversation {
 }
 
 class ChatMessage {
+  String? id;
   final String text;
   final bool isUser;
 
-  ChatMessage({required this.text, required this.isUser});
+  ChatMessage({this.id, required this.text, required this.isUser});
 }
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends StatefulWidget {
   final ChatMessage message;
-  final VoidCallback showBacktest; // {{ edit_4 }} Added showBacktest callback
+  final void Function(String messageId) showBacktest; // Accept messageId in callback
 
   MessageBubble({required this.message, required this.showBacktest});
+
+  @override
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<MessageBubble> {
+  final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   @override
   Widget build(BuildContext context) {
@@ -1586,61 +1737,74 @@ class MessageBubble extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
       child: Row(
         mainAxisAlignment:
-            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        widget.message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!message.isUser) const CircleAvatar(child: Text('AI')),
+          if (!widget.message.isUser) const CircleAvatar(child: Text('AI')),
           Flexible(
             child: Container(
               decoration: BoxDecoration(
-                color: message.isUser ? Colors.blue[800] : Colors.grey[800],
+                color: widget.message.isUser ? Colors.blue[800] : Colors.grey[800],
                 borderRadius: BorderRadius.circular(8.0),
               ),
               padding:
-                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-              child: message.isUser
+              const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+              child: widget.message.isUser
                   ? Text(
-                      message.text,
-                      style: const TextStyle(color: Colors.white),
-                    )
+                widget.message.text,
+                style: const TextStyle(color: Colors.white),
+              )
                   : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.message.text.split('```')[0],
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  if (widget.message.text.contains('```'))
+                    Container(
+                      margin: const EdgeInsets.only(top: 8.0),
+                      child: HighlightView(
+                        widget.message.text.split('```')[1],
+                        language: 'python',
+                        theme: darkTheme,
+                        padding: const EdgeInsets.all(8.0),
+                        textStyle: const TextStyle(
+                            fontSize: 12.0, color: Colors.white),
+                      ),
+                    ),
+                  if (widget.message.text.contains('```'))
+                    Column(
                       children: [
-                        Text(
-                          message.text.split('```')[0],
-                          style: const TextStyle(color: Colors.white),
+                        const SizedBox(height: 8.0),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                            Colors.green, // Green background
+                          ),
+                          // Send the message ID when the button is pressed
+                          onPressed: ()async{
+                            if(widget.message.id == null || widget.message.id == ""){
+                              FlushBar.flushbarmessagered(message: "There is no message id", context: context);
+                            }else{
+                              String? userId = await _secureStorage.read(key: 'email');
+
+                              print('message.id! ${widget.message.id!}');
+                              print('conversation_id ${currentConversation!.id}');
+                              print('userId $userId');
+                              ApiProvider().backTest(context: context, userId: userId!, conversationId: currentConversation!.id, messageId: widget.message.id!);
+                             // showBacktest(message.id!);
+                            }
+
+                          },
+                          child: const Text('Backtest'),
                         ),
-                        if (message.text.contains('```'))
-                          Container(
-                            margin: const EdgeInsets.only(top: 8.0),
-                            child: HighlightView(
-                              message.text.split('```')[1],
-                              language: 'python',
-                              theme: darkTheme,
-                              padding: const EdgeInsets.all(8.0),
-                              textStyle: const TextStyle(
-                                  fontSize: 12.0, color: Colors.white),
-                            ),
-                          ),
-                        // {{ edit_1 }} Updated Backtest button to invoke showBacktest
-                        if (message.text.contains('```'))
-                          Column(
-                            children: [
-                              const SizedBox(height: 8.0),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.green, // Green background
-                                ),
-                                onPressed: showBacktest, // Invoke callback
-                                child: const Text('Backtest'),
-                              ),
-                            ],
-                          ),
                       ],
                     ),
+                ],
+              ),
             ),
           ),
-          if (message.isUser) const CircleAvatar(child: Text('You')),
+          if (widget.message.isUser) const CircleAvatar(child: Text('You')),
         ],
       ),
     );

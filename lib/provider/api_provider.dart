@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/community_strategie_model.dart';
 import 'package:flutter_application_1/model/logs_model.dart';
@@ -12,6 +13,7 @@ import 'package:http/http.dart';
 import 'package:logger/logger.dart';
 
 import '../model/backtest_strategy_chart_model.dart';
+import '../widget/flushbar.dart';
 
 class ApiProvider with ChangeNotifier {
   var logger = Logger();
@@ -296,6 +298,81 @@ class ApiProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> deployWatchlist({required BuildContext context,required String userId,required String selectedEnvironment,required  String strategyName,required String frequency,required int fundingAmount,required  int shareWithCommunity,required int selfImprove, required String originalCreatorId,required String originalStrategyId}) async {
+    var body = jsonEncode({
+      "user_id": userId,
+      "selected_environment": selectedEnvironment,
+      "strategy_name": strategyName,
+      "frequency": frequency,
+      "funding_amount": fundingAmount,
+      "share_with_community": shareWithCommunity,
+      "original_creator_id": originalCreatorId,
+      "original_strategy_id": originalStrategyId,
+    });
+
+    Request req = Request(
+        'POST', Uri.parse('https://www.tradergpt.co/api/community/strategy/deploy'))
+      ..body = body
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the response
+    var jsonData = jsonDecode(responseString);
+
+    // Check if the addition was successful
+    if (response.statusCode == 200 && jsonData['success'] == true) {
+      logger.i(jsonData['message']);
+      return true;
+    } else {
+      logger.e("Failed to add strategy to watchlist: ${jsonData['message']}");
+      FlushBar.flushbarmessagered(message: "${jsonData['message']}", context: context);
+
+      return false;
+    }
+  }
+
+  Future<bool> backTest({required BuildContext context,required String userId,required String conversationId,required  String messageId}) async {
+    var body = jsonEncode({
+      "user_id": userId,
+      "conversation_id": conversationId,
+      "message_id": messageId,
+    });
+    print('body $body');
+    Request req = Request(
+        'POST', Uri.parse('https://www.tradergpt.co/api/conversation/backtest'))
+      ..body = body
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the response
+    var jsonData = jsonDecode(responseString);
+
+    // Check if the addition was successful
+    print(' response.statusCode ${response.statusCode}');
+    print(' jsonData ${jsonData}');
+    if (response.statusCode == 200 && jsonData['success'] == true) {
+      logger.i(jsonData['strategy_id']);
+      return true;
+    } else {
+      logger.e("Failed to add back test : ${jsonData['message']}");
+      FlushBar.flushbarmessagered(message: "${jsonData['message']}", context: context);
+
+      return false;
+    }
+  }
+
   Future<StrategyMetric> getStrategyMetrics(
       String username, String strategy) async {
     var queryParameters = {
@@ -418,5 +495,38 @@ class ApiProvider with ChangeNotifier {
     logger.i(jsonData);
 
     return logs;
+  }
+
+  Future<WatchlistStrategy> getWatchliststrategy(
+      String userid, String creatorid, String strategyid) async {
+    var queryParameters = {
+      'user_id': userid,
+      'original_creator_id': creatorid,
+      'strategy_id': strategyid
+    };
+
+    Request req = Request(
+        'GET', Uri.parse('https://www.tradergpt.co/api/watchlist/strategy'))
+      ..body = json.encode(queryParameters)
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    // Send the request
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the JSON response
+    var jsonData = jsonDecode(responseString);
+
+    // Create an ApiResponse instance from the parsed JSON
+    WatchlistStrategy data = WatchlistStrategy.fromJson(jsonData);
+
+    // Log the response for debugging
+    print(jsonData);
+
+    return data;
   }
 }
