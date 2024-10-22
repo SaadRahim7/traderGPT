@@ -1,7 +1,7 @@
 class StrategyBacktestChart {
   List<String>? dates;
-  List<double?>? sp500Returns;
-  List<double?>? strategyReturns;
+  List<double?> sp500Returns;
+  List<double?> strategyReturns;
 
   StrategyBacktestChart({
     required this.dates,
@@ -32,8 +32,6 @@ class StrategyBacktestChart {
   }
 }
 
-
-
 class StrategyBacktestChartYahoo {
   final List<double> cumulativeReturns;
   final List<String> dates;
@@ -57,4 +55,6 @@ class StrategyBacktestChartYahoo {
     };
   }
 }
+
+
 
