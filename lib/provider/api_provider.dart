@@ -14,6 +14,7 @@ import 'package:http/http.dart';
 import 'package:logger/logger.dart';
 
 import '../model/backtest_strategy_chart_model.dart';
+import '../model/strategy_backtest_model.dart';
 import '../model/watchlist_strategy_model.dart';
 import '../widget/flushbar.dart';
 
@@ -350,8 +351,8 @@ class ApiProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> backTest({
-    required BuildContext context,
+  Future<StrategyBacktestModel> backTest({
+    required context,
     required String userId,
     required String conversationId,
     required String messageId,
@@ -381,31 +382,42 @@ class ApiProvider with ChangeNotifier {
     // Parse the response
     var jsonData = jsonDecode(responseString);
 
-    // Check if the addition was successful
-    print('response.statusCode ${response.statusCode}');
-    print('jsonData $jsonData');
-
-    // Adjust this condition to check the correct field
     if (response.statusCode == 200 && jsonData['status'] == 'success') {
-      // Ensure strategyId variable is defined
-       strategyId = jsonData['strategy_id']; // Store the strategy_id
-      print('strategyId $strategyId'); // Print it to verify
+      StrategyBacktestModel data = StrategyBacktestModel.fromJson(jsonData);
 
-      if (jsonData.containsKey('message')) {
-        logger.i(jsonData['message']);
-      } else {
-        logger.i("Backtest was successful, but no message was provided.");
-      }
-      return true;
+      return data;
     } else {
       // Handle error message correctly
       String errorMessage = jsonData['message'] ?? "An unknown error occurred.";
       logger.e("Failed to add back test: $errorMessage");
       FlushBar.flushbarmessagered(message: errorMessage, context: context);
-      return false;
+      throw Exception(errorMessage);
     }
-  }
 
+    // Check if the addition was successful
+    // print('response.statusCode ${response.statusCode}');
+    // print('jsonData $jsonData');
+
+    // // Adjust this condition to check the correct field
+    // if (response.statusCode == 200 && jsonData['status'] == 'success') {
+    //   // Ensure strategyId variable is defined
+    //    strategyId = jsonData['strategy_id']; // Store the strategy_id
+    //   print('strategyId $strategyId'); // Print it to verify
+
+    //   if (jsonData.containsKey('message')) {
+    //     logger.i(jsonData['message']);
+    //   } else {
+    //     logger.i("Backtest was successful, but no message was provided.");
+    //   }
+    //   return true;
+    // } else {
+    //   // Handle error message correctly
+    //   String errorMessage = jsonData['message'] ?? "An unknown error occurred.";
+    //   logger.e("Failed to add back test: $errorMessage");
+    //   FlushBar.flushbarmessagered(message: errorMessage, context: context);
+    //   return false;
+    // }
+  }
 
   Future<StrategyMetric> getStrategyMetrics(
       String username, String strategy) async {
@@ -587,5 +599,57 @@ class ApiProvider with ChangeNotifier {
 
     return double.parse(
         responseString); // Convert the buying_power value to double
+  }
+
+  Future<bool> conversationStrategyDeploy({
+    required BuildContext context,
+    required String userId,
+    required String selectedEnvironment,
+    required String strategyName,
+    required String frequency,
+    required int fundingAmount,
+    required int shareWithCommunity,
+    required int selfImprove,
+    required String strategyId,
+  }) async {
+    var body = jsonEncode({
+      "user_id": userId,
+      "selected_environment": selectedEnvironment,
+      "strategy_name": strategyName,
+      "frequency": frequency,
+      "funding_amount": fundingAmount,
+      "share_with_community": shareWithCommunity,
+      "strategy_id": strategyId,
+    });
+
+    Request req = Request('POST',
+        Uri.parse('https://www.tradergpt.co/api/conversation/strategy/deploy'))
+      ..body = body
+      ..headers.addAll({
+        "Content-type": "application/json",
+      });
+
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    // Parse the response
+    var jsonData = jsonDecode(responseString);
+
+    // Check if the addition was successful
+    if (response.statusCode == 200 && jsonData['success'] == true) {
+      FlushBar.flushbarmessagered(
+          message: "${jsonData['message']}", context: context);
+      logger.i(jsonData['message']);
+
+      return true;
+    } else {
+      logger.e("Failed to add strategy to watchlist: ${jsonData['message']}");
+      FlushBar.flushbarmessagered(
+          message: "${jsonData['message']}", context: context);
+
+      return false;
+    }
   }
 }
