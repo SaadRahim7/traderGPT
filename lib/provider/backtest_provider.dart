@@ -126,6 +126,6 @@ class BacktestProvider with ChangeNotifier {
     }
 
     return _allDatas;
-    // return [sp500Data, strategyData, _allDatas];
+    
   }
 }

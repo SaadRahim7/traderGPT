@@ -9,6 +9,7 @@ import 'package:flutter_application_1/provider/profitloss_provider.dart';
 import 'package:flutter_application_1/provider/stock_chart_provider.dart';
 import 'package:flutter_application_1/provider/strategie_code_provider.dart';
 import 'package:flutter_application_1/provider/watchlist_provider.dart';
+import 'package:flutter_application_1/provider/watchlist_strategy_provider.dart';
 
 import 'package:provider/provider.dart';
 
@@ -82,6 +83,7 @@ class TraderGPTApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => BacktestProvider()),
         ChangeNotifierProvider(create: (_) => LogProvider()),
+        ChangeNotifierProvider(create: (_) => WatchlistStrategyProvider()),
       ],
       child: MaterialApp(
         title: 'TraderGPT',

@@ -4,19 +4,19 @@ import 'dart:convert';
 class WatchlistStrategy {
   final String code;
   final InteractiveData interactiveData;
-  final Metrics metrics;
+  final Metrics ? metrics;
 
   WatchlistStrategy({
     required this.code,
     required this.interactiveData,
-    required this.metrics,
+     this.metrics,
   });
 
   factory WatchlistStrategy.fromJson(Map<String, dynamic> json) {
     return WatchlistStrategy(
       code: json['code'],
       interactiveData: InteractiveData.fromJson(json['interactive_data']),
-      metrics: Metrics.fromJson(json['metrics']),
+     metrics: json['metrics'] != null ? Metrics.fromJson(json['metrics']) : null
     );
   }
 }

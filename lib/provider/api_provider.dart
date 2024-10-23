@@ -9,6 +9,7 @@ import 'package:flutter_application_1/model/position_model.dart';
 import 'package:flutter_application_1/model/profit_loss_model.dart';
 import 'package:flutter_application_1/model/strategy_model.dart' as strat;
 import 'package:flutter_application_1/model/watchlist_model.dart';
+import 'package:flutter_application_1/model/watchlist_strategy_model.dart';
 import 'package:http/http.dart';
 import 'package:logger/logger.dart';
 
@@ -298,7 +299,17 @@ class ApiProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> deployWatchlist({required BuildContext context,required String userId,required String selectedEnvironment,required  String strategyName,required String frequency,required int fundingAmount,required  int shareWithCommunity,required int selfImprove, required String originalCreatorId,required String originalStrategyId}) async {
+  Future<bool> deployWatchlist(
+      {required BuildContext context,
+      required String userId,
+      required String selectedEnvironment,
+      required String strategyName,
+      required String frequency,
+      required int fundingAmount,
+      required int shareWithCommunity,
+      required int selfImprove,
+      required String originalCreatorId,
+      required String originalStrategyId}) async {
     var body = jsonEncode({
       "user_id": userId,
       "selected_environment": selectedEnvironment,
@@ -310,8 +321,8 @@ class ApiProvider with ChangeNotifier {
       "original_strategy_id": originalStrategyId,
     });
 
-    Request req = Request(
-        'POST', Uri.parse('https://www.tradergpt.co/api/community/strategy/deploy'))
+    Request req = Request('POST',
+        Uri.parse('https://www.tradergpt.co/api/community/strategy/deploy'))
       ..body = body
       ..headers.addAll({
         "Content-type": "application/json",
@@ -331,13 +342,18 @@ class ApiProvider with ChangeNotifier {
       return true;
     } else {
       logger.e("Failed to add strategy to watchlist: ${jsonData['message']}");
-      FlushBar.flushbarmessagered(message: "${jsonData['message']}", context: context);
+      FlushBar.flushbarmessagered(
+          message: "${jsonData['message']}", context: context);
 
       return false;
     }
   }
 
-  Future<bool> backTest({required BuildContext context,required String userId,required String conversationId,required  String messageId}) async {
+  Future<bool> backTest(
+      {required BuildContext context,
+      required String userId,
+      required String conversationId,
+      required String messageId}) async {
     var body = jsonEncode({
       "user_id": userId,
       "conversation_id": conversationId,
@@ -367,7 +383,8 @@ class ApiProvider with ChangeNotifier {
       return true;
     } else {
       logger.e("Failed to add back test : ${jsonData['message']}");
-      FlushBar.flushbarmessagered(message: "${jsonData['message']}", context: context);
+      FlushBar.flushbarmessagered(
+          message: "${jsonData['message']}", context: context);
 
       return false;
     }
@@ -528,5 +545,30 @@ class ApiProvider with ChangeNotifier {
     print(jsonData);
 
     return data;
+  }
+
+  Future<double> buyingPower(String userId, String selectedEnvironment) async {
+    var queryParameters = {
+      'user_id': userId,
+      'selected_environment': selectedEnvironment,
+    };
+
+    Request req =
+        Request('GET', Uri.parse('https://www.tradergpt.co/api/buying_power'))
+          ..body = json.encode(queryParameters)
+          ..headers.addAll({
+            "Content-type": "application/json",
+          });
+    var response = await req.send();
+
+    // Convert the streamed response to string
+    var responseString = await response.stream.bytesToString();
+
+    var jsonData = jsonDecode(responseString);
+
+    logger.i(responseString);
+
+    return double.parse(
+        responseString); // Convert the buying_power value to double
   }
 }
