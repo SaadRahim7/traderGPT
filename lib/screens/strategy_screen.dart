@@ -22,10 +22,12 @@ class StrategyScreen extends StatefulWidget {
   @override
   _StrategyScreenState createState() => _StrategyScreenState();
 }
+
 Conversation? currentConversation;
 
 class _StrategyScreenState extends State<StrategyScreen> {
   List<Conversation> conversations = [];
+
   //Conversation? currentConversation;
   TextEditingController messageController = TextEditingController();
   ScrollController scrollController = ScrollController();
@@ -47,7 +49,6 @@ class _StrategyScreenState extends State<StrategyScreen> {
   int? selectedYear;
   String? currentConversationId;
   String? selectedMessageId;
-
 
   final List<Map<String, dynamic>> _tableData = [
     {
@@ -97,7 +98,7 @@ class _StrategyScreenState extends State<StrategyScreen> {
     }
   }
 
- /* void _fetchConversations() async {
+  /* void _fetchConversations() async {
     if (!isAuthenticated) return;
 
     setState(() {
@@ -162,7 +163,6 @@ class _StrategyScreenState extends State<StrategyScreen> {
     }
   }*/
 
-
   void _fetchConversations() async {
     if (!isAuthenticated) return;
 
@@ -183,49 +183,50 @@ class _StrategyScreenState extends State<StrategyScreen> {
       setState(() {
         conversations = conversationsSnapshot.docs
             .map((doc) {
-          final data = doc.data();
-          final messagesSnapshot = (data['messages'] as List<dynamic>? ?? []);
+              final data = doc.data();
+              final messagesSnapshot =
+                  (data['messages'] as List<dynamic>? ?? []);
 
-          final messages = messagesSnapshot
-              .map((message) {
-            // Check if the 'id' field exists
-            final messageId = message.containsKey('id') ? message['id'] as String? : null;
-            final content = message['content'] as String? ?? '';
+              final messages = messagesSnapshot.map((message) {
+                // Check if the 'id' field exists
+                final messageId =
+                    message.containsKey('id') ? message['id'] as String? : null;
+                final content = message['content'] as String? ?? '';
 
-            if (selectedMessageId == null && messageId != null) {
-              selectedMessageId = messageId;
-            }
+                if (selectedMessageId == null && messageId != null) {
+                  selectedMessageId = messageId;
+                }
 
-            // Print verification results for each message
-            if (messageId != null) {
-              print('Message ID found: $messageId, Content: $content');
-            } else {
-              print('Message has no valid ID: $content');
-            }
+                // Print verification results for each message
+                if (messageId != null) {
+                  print('Message ID found: $messageId, Content: $content');
+                } else {
+                  print('Message has no valid ID: $content');
+                }
 
-            return ChatMessage(
-              id: messageId ?? '',
-              text: content,
-              isUser: message['role'] == 'user',
-            );
-          }).toList();
+                return ChatMessage(
+                  id: messageId ?? '',
+                  text: content,
+                  isUser: message['role'] == 'user',
+                );
+              }).toList();
 
-          // Skip conversations with no messages
-          if (messages.isEmpty) {
-            return null;
-          }
+              // Skip conversations with no messages
+              if (messages.isEmpty) {
+                return null;
+              }
 
-          String title = data['summary'] as String? ??
-              (messages.isNotEmpty
-                  ? messages.first.text
-                  : 'New Conversation');
+              String title = data['summary'] as String? ??
+                  (messages.isNotEmpty
+                      ? messages.first.text
+                      : 'New Conversation');
 
-          return Conversation(
-            id: doc.id,
-            title: title,
-            messages: messages,
-          );
-        })
+              return Conversation(
+                id: doc.id,
+                title: title,
+                messages: messages,
+              );
+            })
             .whereType<Conversation>()
             .toList(); // Filter out null values
 
@@ -235,7 +236,8 @@ class _StrategyScreenState extends State<StrategyScreen> {
           currentConversation = null;
         }
 
-        print('Selected Message ID: $selectedMessageId'); // Use this ID as needed
+        print(
+            'Selected Message ID: $selectedMessageId'); // Use this ID as needed
       });
     } catch (e) {
       print('Error fetching conversations: $e');
@@ -248,7 +250,6 @@ class _StrategyScreenState extends State<StrategyScreen> {
       });
     }
   }
-
 
   void _createNewConversation() async {
     if (!isAuthenticated) return;
@@ -561,8 +562,8 @@ class _StrategyScreenState extends State<StrategyScreen> {
                                 500, // {{ edit_5 }} Set horizontal interval
                             getDrawingHorizontalLine: (value) {
                               return FlLine(
-                                color: Colors.grey[
-                                    700], // {{ edit_6 }} Darker grid lines for contrast
+                                color: Colors.grey[700],
+                                // {{ edit_6 }} Darker grid lines for contrast
                                 strokeWidth: 1,
                               );
                             },
@@ -571,17 +572,18 @@ class _StrategyScreenState extends State<StrategyScreen> {
                             leftTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                interval: 500, // {{ edit_7 }} Adjusted interval
-                                reservedSize:
-                                    40, // {{ edit_8 }} Increased reserved size for labels
+                                interval: 500,
+                                // {{ edit_7 }} Adjusted interval
+                                reservedSize: 40,
+                                // {{ edit_8 }} Increased reserved size for labels
                                 getTitlesWidget: (value, meta) {
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 8.0),
                                     child: Text(
                                       '\$${value.toInt()}',
                                       style: const TextStyle(
-                                        color: Colors
-                                            .white, // {{ edit_9 }} Set y-axis labels to white
+                                        color: Colors.white,
+                                        // {{ edit_9 }} Set y-axis labels to white
                                         fontSize:
                                             10, // {{ edit_10 }} Increased font size
                                       ),
@@ -594,10 +596,10 @@ class _StrategyScreenState extends State<StrategyScreen> {
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                interval:
-                                    24, // {{ edit_11 }} Reduced interval for every 2 years
-                                reservedSize:
-                                    50, // {{ edit_12 }} Increased reserved size for bottom labels
+                                interval: 24,
+                                // {{ edit_11 }} Reduced interval for every 2 years
+                                reservedSize: 50,
+                                // {{ edit_12 }} Increased reserved size for bottom labels
                                 getTitlesWidget: (value, meta) {
                                   int index = value.toInt();
                                   if (index < 0 ||
@@ -606,13 +608,13 @@ class _StrategyScreenState extends State<StrategyScreen> {
                                   }
                                   DateTime date = dialogSortedDates[index];
                                   return Transform.rotate(
-                                    angle: -pi /
-                                        4, // {{ edit_24 }} Rotated label by -45 degrees
+                                    angle: -pi / 4,
+                                    // {{ edit_24 }} Rotated label by -45 degrees
                                     child: Text(
                                       '${date.year}',
                                       style: const TextStyle(
-                                        color: Colors
-                                            .white, // {{ edit_13 }} Set x-axis labels to white
+                                        color: Colors.white,
+                                        // {{ edit_13 }} Set x-axis labels to white
                                         fontSize:
                                             8, // {{ edit_14 }} Decreased font size
                                       ),
@@ -632,12 +634,14 @@ class _StrategyScreenState extends State<StrategyScreen> {
                             show: true,
                             border: Border.all(color: Colors.grey),
                           ),
-                          minY: 0, // {{ edit_15 }} Set minimum Y value
+                          minY: 0,
+                          // {{ edit_15 }} Set minimum Y value
                           maxY: _getMaxY(dataMap.values
                                   .where((data) => data != null)
                                   .expand((e) => e!)
                                   .toList()) +
-                              500, // {{ edit_16 }} Dynamically set max Y
+                              500,
+                          // {{ edit_16 }} Dynamically set max Y
                           lineBarsData: dataMap.entries.map((entry) {
                             Color lineColor;
                             switch (entry.key) {
@@ -662,16 +666,16 @@ class _StrategyScreenState extends State<StrategyScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(
-                        height:
-                            8), // {{ edit_31 }} Spacer between chart and legend
-                    legend, // {{ edit_31 }} Inserted legend here
-                    const SizedBox(
-                        height:
-                            16), // {{ edit_32 }} Spacer between legend and metrics table
-                    metricsTable, // {{ edit_35 }} Inserted metrics table here
-                    const SizedBox(
-                        height: 16), // Additional spacer before Invest button
+                    const SizedBox(height: 8),
+                    // {{ edit_31 }} Spacer between chart and legend
+                    legend,
+                    // {{ edit_31 }} Inserted legend here
+                    const SizedBox(height: 16),
+                    // {{ edit_32 }} Spacer between legend and metrics table
+                    metricsTable,
+                    // {{ edit_35 }} Inserted metrics table here
+                    const SizedBox(height: 16),
+                    // Additional spacer before Invest button
 
                     // {{ edit_36 }} Added Invest button
                     ElevatedButton(
@@ -679,8 +683,8 @@ class _StrategyScreenState extends State<StrategyScreen> {
                       child: const Text('Invest'),
                     ),
 
-                    const SizedBox(
-                        height: 16), // Spacer between Invest button and input
+                    const SizedBox(height: 16),
+                    // Spacer between Invest button and input
                     Row(
                       children: [
                         Expanded(
@@ -1065,7 +1069,7 @@ class _StrategyScreenState extends State<StrategyScreen> {
       ),
       drawer: isAuthenticated
           ? Drawer(
-            /*  child: ListView(
+              /*  child: ListView(
                 children: [
                   DrawerHeader(
                     child: const Text('Conversations'),
@@ -1092,53 +1096,58 @@ class _StrategyScreenState extends State<StrategyScreen> {
                       .toList(),
                 ],
               ),*/
-        child: ListView(
-          children: [
-            DrawerHeader(
-              child: const Text('Conversations'),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
+              child: ListView(
+                children: [
+                  DrawerHeader(
+                    child: const Text('Conversations'),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  ...conversations
+                      .map((conv) => ListTile(
+                            title: Text(conv.title),
+                            onTap: () {
+                              setState(() {
+                                currentConversation = conv;
+                                currentConversationId = currentConversation!.id;
+
+                                // Filter out messages that have no valid id
+                                final validMessages = conv.messages
+                                    .where((message) => message.id!.isNotEmpty)
+                                    .toList();
+
+                                // Check if there are valid messages
+                                if (validMessages.isNotEmpty) {
+                                  for (var message in validMessages) {
+                                    print(
+                                        'Message ID: ${message.id}'); // Print each valid message ID
+                                  }
+                                  selectedMessageId = validMessages.first
+                                      .id; // Set to the first valid message ID
+                                } else {
+                                  selectedMessageId =
+                                      null; // No valid message IDs found
+                                }
+
+                                print(
+                                    'currentConversationId: $currentConversationId');
+                                print(
+                                    'First Selected Message ID: $selectedMessageId'); // Print the first valid message ID
+                              });
+
+                              Navigator.pop(
+                                  context); // Close drawer or navigate back
+                            },
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteConversation(conv),
+                            ),
+                          ))
+                      .toList(),
+                ],
               ),
-            ), ...conversations
-        .map((conv) => ListTile(
-      title: Text(conv.title),
-              onTap: () {
-                setState(() {
-                  currentConversation = conv;
-                  currentConversationId = currentConversation!.id;
-
-                  // Filter out messages that have no valid id
-                  final validMessages = conv.messages.where((message) => message.id!.isNotEmpty).toList();
-
-                  // Check if there are valid messages
-                  if (validMessages.isNotEmpty) {
-                    for (var message in validMessages) {
-                      print('Message ID: ${message.id}'); // Print each valid message ID
-                    }
-                    selectedMessageId = validMessages.first.id; // Set to the first valid message ID
-                  } else {
-                    selectedMessageId = null; // No valid message IDs found
-                  }
-
-                  print('currentConversationId: $currentConversationId');
-                  print('First Selected Message ID: $selectedMessageId'); // Print the first valid message ID
-                });
-
-                Navigator.pop(context); // Close drawer or navigate back
-              },
-
-
-              trailing: IconButton(
-        icon: const Icon(Icons.delete, color: Colors.red),
-        onPressed: () => _deleteConversation(conv),
-      ),
-    ))
-        .toList(),
-
-    ],
-        ),
-
-      )
+            )
           : null,
       body: !isAuthenticated
           ? Center(
@@ -1396,8 +1405,10 @@ class _StrategyScreenState extends State<StrategyScreen> {
                               items: [
                                 'Live',
                                 'Paper',
-                                'Alpaca Live', // {{ edit_10a }} Added Alpaca Live option
-                                'Alpaca Paper', // {{ edit_10b }} Added Alpaca Paper option
+                                'Alpaca Live',
+                                // {{ edit_10a }} Added Alpaca Live option
+                                'Alpaca Paper',
+                                // {{ edit_10b }} Added Alpaca Paper option
                               ]
                                   .map((env) => DropdownMenuItem(
                                         value: env,
@@ -1428,7 +1439,8 @@ class _StrategyScreenState extends State<StrategyScreen> {
                             DropdownButtonFormField<String>(
                               value: connectBrokerage.isEmpty
                                   ? null
-                                  : connectBrokerage, // Use the updated connectBrokerage
+                                  : connectBrokerage,
+                              // Use the updated connectBrokerage
                               decoration: const InputDecoration(
                                 labelText: 'Connect Brokerage',
                                 border: OutlineInputBorder(),
@@ -1720,7 +1732,8 @@ class ChatMessage {
 
 class MessageBubble extends StatefulWidget {
   final ChatMessage message;
-  final void Function(String messageId) showBacktest; // Accept messageId in callback
+  final void Function(String messageId)
+      showBacktest; // Accept messageId in callback
 
   MessageBubble({required this.message, required this.showBacktest});
 
@@ -1729,79 +1742,123 @@ class MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
-  final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  bool _isLoading = false; // Track the loading state
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
       child: Row(
-        mainAxisAlignment:
-        widget.message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: widget.message.isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
           if (!widget.message.isUser) const CircleAvatar(child: Text('AI')),
           Flexible(
             child: Container(
               decoration: BoxDecoration(
-                color: widget.message.isUser ? Colors.blue[800] : Colors.grey[800],
+                color:
+                    widget.message.isUser ? Colors.blue[800] : Colors.grey[800],
                 borderRadius: BorderRadius.circular(8.0),
               ),
               padding:
-              const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
               child: widget.message.isUser
                   ? Text(
-                widget.message.text,
-                style: const TextStyle(color: Colors.white),
-              )
+                      widget.message.text,
+                      style: const TextStyle(color: Colors.white),
+                    )
                   : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.message.text.split('```')[0],
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  if (widget.message.text.contains('```'))
-                    Container(
-                      margin: const EdgeInsets.only(top: 8.0),
-                      child: HighlightView(
-                        widget.message.text.split('```')[1],
-                        language: 'python',
-                        theme: darkTheme,
-                        padding: const EdgeInsets.all(8.0),
-                        textStyle: const TextStyle(
-                            fontSize: 12.0, color: Colors.white),
-                      ),
-                    ),
-                  if (widget.message.text.contains('```'))
-                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 8.0),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            Colors.green, // Green background
-                          ),
-                          // Send the message ID when the button is pressed
-                          onPressed: ()async{
-                            if(widget.message.id == null || widget.message.id == ""){
-                              FlushBar.flushbarmessagered(message: "There is no message id", context: context);
-                            }else{
-                              String? userId = await _secureStorage.read(key: 'email');
-
-                              print('message.id! ${widget.message.id!}');
-                              print('conversation_id ${currentConversation!.id}');
-                              print('userId $userId');
-                              ApiProvider().backTest(context: context, userId: userId!, conversationId: currentConversation!.id, messageId: widget.message.id!);
-                             // showBacktest(message.id!);
-                            }
-
-                          },
-                          child: const Text('Backtest'),
+                        Text(
+                          widget.message.text.split('```')[0],
+                          style: const TextStyle(color: Colors.white),
                         ),
+                        if (widget.message.text.contains('```'))
+                          Container(
+                            margin: const EdgeInsets.only(top: 8.0),
+                            child: HighlightView(
+                              widget.message.text.split('```')[1],
+                              language: 'python',
+                              theme: darkTheme,
+                              padding: const EdgeInsets.all(8.0),
+                              textStyle: const TextStyle(
+                                  fontSize: 12.0, color: Colors.white),
+                            ),
+                          ),
+                        if (widget.message.text.contains('```'))
+                          Column(
+                            children: [
+                              const SizedBox(height: 8.0),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isLoading
+                                      ? Colors
+                                          .grey // Disabled button color when loading
+                                      : Colors.green, // Green background
+                                ),
+                                onPressed: _isLoading
+                                    ? null // Disable button when loading
+                                    : () async {
+                                        setState(() {
+                                          _isLoading = true; // Start loading
+                                        });
+
+                                        if (widget.message.id == null ||
+                                            widget.message.id == "") {
+                                          FlushBar.flushbarmessagered(
+                                              message: "There is no message id",
+                                              context: context);
+                                        } else {
+                                          String? userId = await _secureStorage
+                                              .read(key: 'email');
+
+                                          print(
+                                              'message.id! ${widget.message.id!}');
+                                          print(
+                                              'conversation_id ${currentConversation!.id}');
+                                          print('userId $userId');
+
+                                          // Call backTest and await its result
+                                          bool isSuccess =
+                                              await ApiProvider().backTest(
+                                            context: context,
+                                            userId: userId!,
+                                            conversationId:
+                                                currentConversation!.id,
+                                            messageId: widget.message.id!,
+                                          );
+
+                                          if (isSuccess) {
+                                            widget.showBacktest(
+                                                widget.message.id!);
+                                          } else {
+                                            FlushBar.flushbarmessagered(
+                                                message: "Backtest failed.",
+                                                context: context);
+                                          }
+                                        }
+
+                                        setState(() {
+                                          _isLoading = false; // Stop loading
+                                        });
+                                      },
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                        ),
+                                      ) // Show a loader while loading
+                                    : const Text('Backtest'),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
-                ],
-              ),
             ),
           ),
           if (widget.message.isUser) const CircleAvatar(child: Text('You')),

@@ -14,11 +14,12 @@ import 'package:http/http.dart';
 import 'package:logger/logger.dart';
 
 import '../model/backtest_strategy_chart_model.dart';
+import '../model/watchlist_strategy_model.dart';
 import '../widget/flushbar.dart';
 
 class ApiProvider with ChangeNotifier {
   var logger = Logger();
-
+  String? strategyId;
   Future<List<strat.Strategy>> getStrategy(String username) async {
     var queryParameters = {
       'user_id': username,
@@ -349,19 +350,24 @@ class ApiProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> backTest(
-      {required BuildContext context,
-      required String userId,
-      required String conversationId,
-      required String messageId}) async {
+  Future<bool> backTest({
+    required BuildContext context,
+    required String userId,
+    required String conversationId,
+    required String messageId,
+  }) async {
     var body = jsonEncode({
       "user_id": userId,
       "conversation_id": conversationId,
       "message_id": messageId,
     });
+
     print('body $body');
+
     Request req = Request(
-        'POST', Uri.parse('https://www.tradergpt.co/api/conversation/backtest'))
+      'POST',
+      Uri.parse('https://www.tradergpt.co/api/conversation/backtest'),
+    )
       ..body = body
       ..headers.addAll({
         "Content-type": "application/json",
@@ -376,19 +382,30 @@ class ApiProvider with ChangeNotifier {
     var jsonData = jsonDecode(responseString);
 
     // Check if the addition was successful
-    print(' response.statusCode ${response.statusCode}');
-    print(' jsonData ${jsonData}');
-    if (response.statusCode == 200 && jsonData['success'] == true) {
-      logger.i(jsonData['strategy_id']);
+    print('response.statusCode ${response.statusCode}');
+    print('jsonData $jsonData');
+
+    // Adjust this condition to check the correct field
+    if (response.statusCode == 200 && jsonData['status'] == 'success') {
+      // Ensure strategyId variable is defined
+       strategyId = jsonData['strategy_id']; // Store the strategy_id
+      print('strategyId $strategyId'); // Print it to verify
+
+      if (jsonData.containsKey('message')) {
+        logger.i(jsonData['message']);
+      } else {
+        logger.i("Backtest was successful, but no message was provided.");
+      }
       return true;
     } else {
-      logger.e("Failed to add back test : ${jsonData['message']}");
-      FlushBar.flushbarmessagered(
-          message: "${jsonData['message']}", context: context);
-
+      // Handle error message correctly
+      String errorMessage = jsonData['message'] ?? "An unknown error occurred.";
+      logger.e("Failed to add back test: $errorMessage");
+      FlushBar.flushbarmessagered(message: errorMessage, context: context);
       return false;
     }
   }
+
 
   Future<StrategyMetric> getStrategyMetrics(
       String username, String strategy) async {
