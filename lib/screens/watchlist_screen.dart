@@ -578,11 +578,6 @@ class _StrategyChartDialogState extends State<StrategyChartDialog> {
                                                 originalStrategyId,
                                           );
 
-                                          FlushBar.flushbarmessagegreen(
-                                              message:
-                                                  "Community strategy deployment completed",
-                                              context: context);
-
                                           Future.delayed(
                                               const Duration(seconds: 2), () {
                                             Navigator.of(context).pop();

@@ -318,6 +318,7 @@ class ApiProvider with ChangeNotifier {
       "strategy_name": strategyName,
       "frequency": frequency,
       "funding_amount": fundingAmount,
+      "self_improve": selfImprove,
       "share_with_community": shareWithCommunity,
       "original_creator_id": originalCreatorId,
       "original_strategy_id": originalStrategyId,
@@ -340,6 +341,8 @@ class ApiProvider with ChangeNotifier {
 
     // Check if the addition was successful
     if (response.statusCode == 200 && jsonData['success'] == true) {
+      FlushBar.flushbarmessagegreen(
+          message: "${jsonData['message']}", context: context);
       logger.i(jsonData['message']);
       return true;
     } else {
