@@ -150,40 +150,6 @@ class _BacktestScreenState extends State<BacktestScreen> {
         }
       },
     );
-
-    // Consumer<BacktestProvider>(
-    //   builder: (context, backtestProvider, child) {
-    //     if (backtestProvider.isLoading) {
-    //       return const Center(child: CircularProgressIndicator());
-    //     }
-
-    //     if (backtestProvider.errorMessage != null) {
-    //       return Center(child: Text(backtestProvider.errorMessage!));
-    //     }
-
-    //     final data = backtestProvider.metricData!;
-
-    //     return SingleChildScrollView(
-    //       scrollDirection: Axis.horizontal,
-    //       child: DataTable(
-    //         columns: data.columns
-    //             .map((column) => DataColumn(label: Text(column)))
-    //             .toList(),
-    //         rows: data.data.map((strategy) {
-    //           return DataRow(cells: [
-    //             DataCell(Text(strategy.strategyName)),
-    //             DataCell(Text(strategy.initialInvestment)),
-    //             DataCell(Text(strategy.finalValue)),
-    //             DataCell(Text(strategy.annualizedReturn)),
-    //             DataCell(Text(strategy.sharpeRatio)),
-    //             DataCell(Text(strategy.standardDeviation)),
-    //             DataCell(Text(strategy.maxDrawdown)),
-    //           ]);
-    //         }).toList(),
-    //       ),
-    //     );
-    //   },
-    // );
   }
 }
 
@@ -197,40 +163,10 @@ class LineChartWidget extends StatefulWidget {
   _LineChartWidgetState createState() => _LineChartWidgetState();
 }
 
-Set<Color> usedColors = {};
-
-Color getRandomUniqueColor() {
-  Random random = Random();
-  Color newColor;
-
-  do {
-    newColor = Color.fromARGB(255, (random.nextInt(5) * 51),
-        (random.nextInt(5) * 51), (random.nextInt(5) * 51));
-  } while (usedColors.contains(newColor));
-
-  usedColors.add(newColor);
-  return newColor;
-}
-
 class _LineChartWidgetState extends State<LineChartWidget> {
   TextEditingController _symbolController = TextEditingController();
   String? _inputText = 'other';
   List color = [];
-
-  void _updateText() {
-    setState(() {
-      _inputText = _symbolController.text;
-    });
-  }
-
-  void _addStrategy() {
-    if (_symbolController.text.isNotEmpty) {
-      setState(() {
-        strategies.add(_symbolController.text);
-        _symbolController.clear();
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -250,8 +186,8 @@ class _LineChartWidgetState extends State<LineChartWidget> {
                   Provider.of<BacktestProvider>(context, listen: false)
                       .fetchStrategyChartYahoo(email!, _symbolController.text,
                           widget.chartData.dates!);
-                  _addStrategy();
-                  // _symbolController.clear();
+                  //_addStrategy();
+                  _symbolController.clear();
                 },
                 child: const Text('Add Ticker'),
               ),
@@ -260,31 +196,21 @@ class _LineChartWidgetState extends State<LineChartWidget> {
         ),
         const SizedBox(height: 10),
 
-        //title
-        // Row(
-        //   mainAxisAlignment: MainAxisAlignment.spaceAround,
-        //   children: [
-        //     const CustomText(color: Colors.red, title: 'S&P500'),
-        //     const CustomText(color: Colors.green, title: 'GPT Strategy'),
-        //     CustomText(color: Colors.blue, title: _inputText!),
-        //   ],
-        // ),
-
         if (backtestProvider.chartData != null)
           SizedBox(
             height: 40,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               shrinkWrap: true,
-              itemCount: strategies.length,
+              itemCount: backtestProvider.allStrategies.length,
               itemBuilder: (context, index) {
                 return Row(
                   children: [
                     Padding(
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: CustomText(
-                          color: Colors.red,
-                          title: strategies[index],
+                          color: backtestProvider.allStrategiesColor[index],
+                          title: backtestProvider.allStrategies[index],
                         ))
                   ],
                 );
@@ -303,27 +229,15 @@ class _LineChartWidgetState extends State<LineChartWidget> {
               }
 
               List<LineChartBarData> lineBarsData = [];
-              // provider.allDatas.forEach((element) {
-              //   color.add(getRandomUniqueColor());
-              //   Logger().i("color ${color}");
-              //   lineBarsData.add(LineChartBarData(
-              //     spots: element,
-              //     isCurved: true,
-              //     color: color[element.],
-              //     barWidth: 2,
-              //     belowBarData: BarAreaData(show: false),
-              //     dotData: const FlDotData(show: false),
-              //   ));
-              // });
 
               for (int i = 0; i < provider.allDatas.length; i++) {
                 var element = provider.allDatas[i];
-                color.add(getRandomUniqueColor());
-                Logger().i("color ${color}");
+                var elementColor = provider.allStrategiesColor[i];
+
                 lineBarsData.add(LineChartBarData(
                   spots: element,
                   isCurved: true,
-                  color: color[i], // Use the index i to access the color
+                  color: elementColor,
                   barWidth: 2,
                   belowBarData: BarAreaData(show: false),
                   dotData: const FlDotData(show: false),

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/strategy_backtest_model.dart';
@@ -19,6 +21,31 @@ class StrategyBacktestProvider with ChangeNotifier {
   List<List<FlSpot>> _allDatas = [];
   List<List<FlSpot>> get allDatas => _allDatas;
 
+  List<String> _allStrategies = [];
+  List<String> get allStrategies => _allStrategies;
+  List<Color> _allStrategiesColor = [];
+  List<Color> get allStrategiesColor => _allStrategiesColor;
+
+  Set<Color> usedColors = {};
+
+  Color getRandomUniqueColor() {
+    Random random = Random();
+    Color newColor;
+
+    do {
+      // Generate brighter colors by using higher ranges for RGB values
+      newColor = Color.fromARGB(
+          255,
+          (random.nextInt(3) * 85) + 85, // Min value of 85 for red
+          (random.nextInt(3) * 85) + 85, // Min value of 85 for green
+          (random.nextInt(3) * 85) + 85 // Min value of 85 for blue
+          );
+    } while (usedColors.contains(newColor));
+
+    usedColors.add(newColor);
+    return newColor;
+  }
+
   Future<void> fetchInteractiveData(
       String userid, String conversitonid, String messageid) async {
     _isLoading = true;
@@ -29,6 +56,8 @@ class StrategyBacktestProvider with ChangeNotifier {
     List<FlSpot>? strategyData = [];
 
     _allDatas = [];
+    _allStrategies = [];
+    _allStrategiesColor = [];
 
     try {
       _data = await ApiProvider().backTest(
@@ -47,6 +76,8 @@ class StrategyBacktestProvider with ChangeNotifier {
         }
 
         _allDatas.add(sp500Data);
+        _allStrategies.add('S&P500');
+        _allStrategiesColor.add(getRandomUniqueColor());
       }
 
       // Add strategy returns data
@@ -59,6 +90,8 @@ class StrategyBacktestProvider with ChangeNotifier {
         }
 
         _allDatas.add(strategyData);
+        _allStrategies.add('GPT Strategy');
+        _allStrategiesColor.add(getRandomUniqueColor());
       }
     } catch (e) {
       _errorMessage = 'Python Code Execution Failed';
@@ -88,6 +121,8 @@ class StrategyBacktestProvider with ChangeNotifier {
         }
 
         _allDatas.add(yahooData);
+        _allStrategies.add(strategy);
+        _allStrategiesColor.add(getRandomUniqueColor());
       }
     } catch (e) {
       _errorMessage = 'Error: $e';

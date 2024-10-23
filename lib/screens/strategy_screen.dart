@@ -6,21 +6,15 @@ import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../provider/stock_chart_provider.dart';
 import '../provider/strategy_backtest_provider.dart';
 import '../services/openai_service.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/dark.dart';
-import 'package:fl_chart/fl_chart.dart'; // {{ edit_1 }} Imported fl_chart package
-import 'package:http/http.dart' as http; // Imported for HTTP requests
-import 'dart:convert'; // Imported for JSON decoding
-import 'dart:math'; // {{ edit_23 }} Imported math library for rotation
-import 'package:flutter/services.dart'; // {{ edit_25 }} Imported for input formatting
-import 'package:webview_flutter/webview_flutter.dart'; // {{ edit_new }} Import updated webview_flutter package
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // {{ edit_6 }} Added flutter_secure_storage for secure token storage
-import 'dart:io';
-
-import '../widget/flushbar.dart'; // {{ edit_new }} Import dart:io for platform checks
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:convert';
+import 'dart:math';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../widget/flushbar.dart';
 
 class StrategyScreen extends StatefulWidget {
   @override
@@ -29,21 +23,7 @@ class StrategyScreen extends StatefulWidget {
 
 const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 Conversation? currentConversation;
-Set<Color> usedColors = {};
 List<String> strategies = [];
-
-Color getRandomUniqueColor() {
-  Random random = Random();
-  Color newColor;
-
-  do {
-    newColor = Color.fromARGB(255, (random.nextInt(5) * 51),
-        (random.nextInt(5) * 51), (random.nextInt(5) * 51));
-  } while (usedColors.contains(newColor));
-
-  usedColors.add(newColor);
-  return newColor;
-}
 
 class _StrategyScreenState extends State<StrategyScreen> {
   List<Conversation> conversations = [];
@@ -54,14 +34,6 @@ class _StrategyScreenState extends State<StrategyScreen> {
   bool isLoading = false;
   String errorMessage = '';
   bool isAuthenticated = false;
-  List<String> additionalTickers = [];
-  TextEditingController tickerController = TextEditingController();
-  String alpacaAccessToken = '';
-  double alpacaBuyingPower = 0.0;
-  String clientId = '6c237ee966f7c0ace2c5cf65293b4d61';
-  String clientSecret = '25e5e97c680d303fcec2fb9cea33a03a713df133';
-  String redirectUri = 'http://www.tradergpt.co/oauth/callback';
-  bool isPaperAccount = false;
 
   final TextEditingController stockController = TextEditingController();
   String? selectedStock;
@@ -80,7 +52,6 @@ class _StrategyScreenState extends State<StrategyScreen> {
   void dispose() {
     messageController.dispose();
     scrollController.dispose();
-    tickerController.dispose();
     super.dispose();
   }
 
@@ -468,12 +439,7 @@ class _StrategyScreenState extends State<StrategyScreen> {
       });
     }
   }
-
- 
-  
-  
-  
-  }
+}
 
 class Conversation {
   final String id;
@@ -674,7 +640,7 @@ class _StrategyChartDialogState extends State<StrategyChartDialog> {
             TextEditingController();
 
         String frequency = 'hourly';
-        String deploymentEnvironment = 'paper'; // Initialize here
+        String? deploymentEnvironment; // Initialize here
         bool shareWithCommunity = true;
         bool selfImprove = true;
         bool isDeploying = false;
@@ -922,7 +888,7 @@ class _StrategyChartDialogState extends State<StrategyChartDialog> {
                                             context: context,
                                             userId: userId!,
                                             selectedEnvironment:
-                                                deploymentEnvironment,
+                                                deploymentEnvironment!,
                                             strategyName:
                                                 strategyNameController.text,
                                             frequency: frequency,
@@ -1068,21 +1034,6 @@ class _LineChartWidgetState extends State<LineChartWidget> {
   String? _inputText = 'other';
   List color = [];
 
-  void _updateText() {
-    setState(() {
-      _inputText = _symbolController.text;
-    });
-  }
-
-  void _addStrategy() {
-    if (_symbolController.text.isNotEmpty) {
-      setState(() {
-        strategies.add(_symbolController.text);
-        _symbolController.clear();
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -1101,7 +1052,8 @@ class _LineChartWidgetState extends State<LineChartWidget> {
                   Provider.of<StrategyBacktestProvider>(context, listen: false)
                       .fetchStrategyChartYahoo(email!, _symbolController.text,
                           widget.chartData.dates!);
-                  _addStrategy();
+                  // _addStrategy();
+                  _symbolController.clear();
                 },
                 child: const Text('Add Ticker'),
               ),
@@ -1116,15 +1068,15 @@ class _LineChartWidgetState extends State<LineChartWidget> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               shrinkWrap: true,
-              itemCount: strategies.length,
+              itemCount: backtestProvider.allStrategies.length,
               itemBuilder: (context, index) {
                 return Row(
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: CustomText(
-                        color: Colors.red,
-                        title: strategies[index],
+                        color: backtestProvider.allStrategiesColor[index],
+                        title: backtestProvider.allStrategies[index],
                       ),
                     )
                   ],
@@ -1147,12 +1099,12 @@ class _LineChartWidgetState extends State<LineChartWidget> {
 
               for (int i = 0; i < provider.allDatas.length; i++) {
                 var element = provider.allDatas[i];
-                color.add(getRandomUniqueColor());
+                var elementColor = provider.allStrategiesColor[i];
 
                 lineBarsData.add(LineChartBarData(
                   spots: element,
                   isCurved: true,
-                  color: color[i],
+                  color: elementColor,
                   barWidth: 2,
                   belowBarData: BarAreaData(show: false),
                   dotData: const FlDotData(show: false),

@@ -309,7 +309,7 @@ class _StrategyChartDialogState extends State<StrategyChartDialog> {
             TextEditingController();
 
         String frequency = 'hourly';
-        String deploymentEnvironment = 'paper';
+        String? deploymentEnvironment;
         bool shareWithCommunity = true;
         bool selfImprove = true;
         bool isDeploying = false;
@@ -564,7 +564,7 @@ class _StrategyChartDialogState extends State<StrategyChartDialog> {
                                             context: context,
                                             userId: userId!,
                                             selectedEnvironment:
-                                                deploymentEnvironment,
+                                                deploymentEnvironment!,
                                             strategyName:
                                                 strategyNameController.text,
                                             frequency: frequency,
@@ -744,7 +744,8 @@ class _LineChartWidgetState extends State<LineChartWidget> {
                   Provider.of<WatchlistStrategyProvider>(context, listen: false)
                       .fetchStrategyChartYahoo(email!, _symbolController.text,
                           widget.chartData.dates!);
-                  _addStrategy();
+                  // _addStrategy();
+                  _symbolController.clear();
                 },
                 child: const Text('Add Ticker'),
               ),
@@ -759,15 +760,15 @@ class _LineChartWidgetState extends State<LineChartWidget> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               shrinkWrap: true,
-              itemCount: strategies.length,
+              itemCount: backtestProvider.allStrategies.length,
               itemBuilder: (context, index) {
                 return Row(
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: CustomText(
-                        color: Colors.red,
-                        title: strategies[index],
+                        color: backtestProvider.allStrategiesColor[index],
+                        title: backtestProvider.allStrategies[index],
                       ),
                     )
                   ],
@@ -787,27 +788,16 @@ class _LineChartWidgetState extends State<LineChartWidget> {
               }
 
               List<LineChartBarData> lineBarsData = [];
-              // provider.allDatas.forEach((element) {
-              //   color.add(getRandomUniqueColor());
-              //   Logger().i("color ${color}");
-              //   lineBarsData.add(LineChartBarData(
-              //     spots: element,
-              //     isCurved: true,
-              //     color: color[element.],
-              //     barWidth: 2,
-              //     belowBarData: BarAreaData(show: false),
-              //     dotData: const FlDotData(show: false),
-              //   ));
-              // });
 
               for (int i = 0; i < provider.allDatas.length; i++) {
                 var element = provider.allDatas[i];
-                color.add(getRandomUniqueColor());
+
+                var elementColor = provider.allStrategiesColor[i];
 
                 lineBarsData.add(LineChartBarData(
                   spots: element,
                   isCurved: true,
-                  color: color[i],
+                  color: elementColor,
                   barWidth: 2,
                   belowBarData: BarAreaData(show: false),
                   dotData: const FlDotData(show: false),

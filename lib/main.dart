@@ -90,6 +90,7 @@ class TraderGPTApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ApiProvider()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'TraderGPT',
         theme: ThemeData.dark().copyWith(
           primaryColor: Colors.green[700],

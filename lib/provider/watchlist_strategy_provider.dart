@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/watchlist_strategy_model.dart';
@@ -19,6 +21,31 @@ class WatchlistStrategyProvider with ChangeNotifier {
   List<List<FlSpot>> _allDatas = [];
   List<List<FlSpot>> get allDatas => _allDatas;
 
+  List<String> _allStrategies = [];
+  List<String> get allStrategies => _allStrategies;
+  List<Color> _allStrategiesColor = [];
+  List<Color> get allStrategiesColor => _allStrategiesColor;
+
+  Set<Color> usedColors = {};
+
+  Color getRandomUniqueColor() {
+    Random random = Random();
+    Color newColor;
+
+    do {
+      // Generate brighter colors by using higher ranges for RGB values
+      newColor = Color.fromARGB(
+          255,
+          (random.nextInt(3) * 85) + 85, // Min value of 85 for red
+          (random.nextInt(3) * 85) + 85, // Min value of 85 for green
+          (random.nextInt(3) * 85) + 85 // Min value of 85 for blue
+          );
+    } while (usedColors.contains(newColor));
+
+    usedColors.add(newColor);
+    return newColor;
+  }
+
   Future<void> fetchWatchlist(
       String userid, String creatorid, String strategyid) async {
     _isLoading = true;
@@ -28,6 +55,8 @@ class WatchlistStrategyProvider with ChangeNotifier {
     List<FlSpot>? strategyData = [];
 
     _allDatas = [];
+    _allStrategies = [];
+    _allStrategiesColor = [];
 
     try {
       _watchlistStrategy = await ApiProvider()
@@ -46,6 +75,8 @@ class WatchlistStrategyProvider with ChangeNotifier {
         }
 
         _allDatas.add(sp500Data);
+        _allStrategies.add('S&P500');
+        _allStrategiesColor.add(getRandomUniqueColor());
       }
 
       // Add strategy returns data
@@ -61,6 +92,8 @@ class WatchlistStrategyProvider with ChangeNotifier {
         }
 
         _allDatas.add(strategyData);
+        _allStrategies.add('GPT Strategy');
+        _allStrategiesColor.add(getRandomUniqueColor());
       }
     } catch (e) {
       print("Failed to load strategies: $e");
@@ -90,6 +123,8 @@ class WatchlistStrategyProvider with ChangeNotifier {
         }
 
         _allDatas.add(yahooData);
+        _allStrategies.add(strategy);
+        _allStrategiesColor.add(getRandomUniqueColor());
       }
     } catch (e) {
       _errorMessage = 'Error: $e';
